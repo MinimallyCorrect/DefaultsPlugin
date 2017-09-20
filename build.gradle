@@ -57,14 +57,14 @@ artifacts {
 }
 
 pluginBundle {
-	website = 'http://www.gradle.org/'
-	vcsUrl = 'https://github.com/minimallycorrect/ConventionPlugin'
-	description = 'Sets up '
-	tags = ['minecraft']
+	website = 'http://www.minimallycorrect.org/'
+	vcsUrl = 'https://github.com/MinimallyCorrect/DefaultsPlugin'
+	description = 'Sets up sensible defaults for our gradle projects to avoid boilerplate '
+	tags = ['gradle', 'gradle-plugin']
 	plugins << {
-		ConventionPlugin {
-			id = 'org.minimallycorrect.gradle.ConventionPlugin'
-			displayName = 'LibLoader Gradle Plugin'
+		DefaultsPlugin {
+			id = 'org.minimallycorrect.gradle.DefaultsPlugin'
+			displayName = 'MinimallyCorrect Defaults Plugin'
 		}
 	}
 }

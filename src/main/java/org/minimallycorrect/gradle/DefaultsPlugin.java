@@ -44,7 +44,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	@SneakyThrows
 	@Override
 	public void apply(Project project) {
-		project.getExtensions().add("minimallyCorrectConvention", settings);
+		project.getExtensions().add("minimallyCorrectDefaults", settings);
 		this.project = project;
 		project.afterEvaluate(this::afterEvaluate);
 	}
@@ -54,7 +54,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			return;
 
 		if (!initialised)
-			throw new RuntimeException("Should have called `minimallyCorrectConvention()`");
+			throw new RuntimeException("Should have called `minimallyCorrectDefaults()`");
 
 		for (Jar jar : project.getTasks().withType(Jar.class)) {
 			jar.setDuplicatesStrategy(DuplicatesStrategy.WARN);

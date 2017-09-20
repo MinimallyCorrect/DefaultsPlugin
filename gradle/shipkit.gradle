@@ -15,7 +15,7 @@ allprojects {
                userOrg = 'minimallycorrect'
                name = 'DefaultsPlugin'
                licenses = ['MIT']
-               labels = ['continuous delivery', 'release automation', 'shipkit']
+               labels = ['gradle', 'gradle-plugin']
            }
        }
    }
