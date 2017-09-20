@@ -137,7 +137,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 		if (settings.shipkit) {
 			val configuration = project.getPlugins().apply(ShipkitConfigurationPlugin.class).getConfiguration();
 			val githubRepo = getGithubRepo();
-			System.out.println(githubRepo);
 			configuration.getGitHub().setRepository(githubRepo);
 			configuration.getGitHub().setReadOnlyAuthToken("bf61e48ac43dbad4d4a63ff664f5f9446adaa9c5");
 
