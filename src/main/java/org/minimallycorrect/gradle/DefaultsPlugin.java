@@ -171,6 +171,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 						pkg.setGithubRepo(githubRepo);
 						pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
 					}
+					if (settings.minecraft != null)
+						project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
 				}
 			});
 		}
@@ -280,11 +282,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 				maybeAddArtifact("javadocJar", curseProject);
 				extension.getCurseProjects().add(curseProject);
 			}
-
-			if (!project.getVersion().toString().contains(settings.minecraft))
-				project.getTasks().getByName("jar").doFirst(it -> {
-					throw new RuntimeException("project version " + project.getVersion() + " doesn't include minecraft version " + settings.minecraft + ", probable screwup");
-				});
 		}
 
 		if (settings.wrapperJavaArgs != null) {
