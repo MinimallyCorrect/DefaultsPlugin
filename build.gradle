@@ -22,6 +22,7 @@ dependencies {
 	compileOnly gradleApi()
 	compileOnly "org.projectlombok:lombok:1.16.16"
 	compileOnly "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
+	compileOnly "gradle.plugin.com.matthewprenger:CurseGradle:1.0.9"
 	//compileOnly "gradle.plugin.com.github.spotbugs:gradlePlugin:1.3"
 	compile "com.diffplug.spotless:spotless-plugin-gradle:3.5.2"
 	compile "org.shipkit:shipkit:0.9.76"

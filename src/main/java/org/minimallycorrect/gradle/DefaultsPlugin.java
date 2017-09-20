@@ -4,6 +4,12 @@ import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.diffplug.gradle.spotless.SpotlessPlugin;
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
+import com.jfrog.bintray.gradle.BintrayExtension;
+import com.jfrog.bintray.gradle.BintrayPlugin;
+import com.matthewprenger.cursegradle.CurseExtension;
+import com.matthewprenger.cursegradle.CurseGradlePlugin;
+import com.matthewprenger.cursegradle.CurseProject;
+import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -21,14 +27,17 @@ import org.gradle.language.jvm.tasks.ProcessResources;
 import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.testing.jacoco.tasks.JacocoReport;
 import org.shipkit.internal.gradle.configuration.ShipkitConfigurationPlugin;
+import org.shipkit.internal.gradle.java.ShipkitJavaPlugin;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.regex.*;
 
 public class DefaultsPlugin implements Plugin<Project> {
 	private final Extension settings = new Extension();
+	private final String RELEASE_NOTES_PATH = "docs/release-notes.md";
 	private Project project;
 	private boolean initialised;
 
@@ -70,6 +79,9 @@ public class DefaultsPlugin implements Plugin<Project> {
 			attributes.put("Group", project.getGroup());
 			attributes.put("Name", project.getName());
 			attributes.put("Implementation-Title", project.getGroup() + "." + project.getName() + packageIfExists(jar.getClassifier()));
+
+			if (settings.minecraft != null)
+				attributes.put("Minecraft-Version", settings.minecraft);
 		}
 
 		for (JavaCompile it : project.getTasks().withType(JavaCompile.class)) {
@@ -87,6 +99,32 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 	}
 
+	private String getGithubRepo() {
+		String vcsUrl = getVcsUrl();
+		if (vcsUrl == null)
+			return null;
+		int lastIndexOfSlash = vcsUrl.lastIndexOf('/');
+		int secondLast = vcsUrl.lastIndexOf('/', lastIndexOfSlash - 1);
+		if (secondLast == -1)
+			secondLast = vcsUrl.lastIndexOf(':', lastIndexOfSlash - 1);
+		return vcsUrl.substring(secondLast + 1, vcsUrl.lastIndexOf('.'));
+	}
+
+	@SneakyThrows
+	private String getVcsUrl() {
+		if (settings.vcsUrl != null)
+			return settings.vcsUrl;
+		val out = new ByteArrayOutputStream();
+		val result = project.exec(it -> {
+			it.setCommandLine("git", "ls-remote", "--get-url", "origin");
+			it.setStandardOutput(out);
+		});
+		if (result.getExitValue() != 0)
+			throw new Error("Failed to get VCS URL");
+		return (settings.vcsUrl = out.toString(Charsets.UTF_8.name()));
+	}
+
+	@SneakyThrows
 	private void configure() {
 		initialised = true;
 		Project project = this.project;
@@ -96,14 +134,49 @@ public class DefaultsPlugin implements Plugin<Project> {
 		val javaPluginConvention = project.getConvention().findPlugin(JavaPluginConvention.class);
 		val sourceSets = javaPluginConvention.getSourceSets();
 
+		if (settings.shipkit) {
+			val configuration = project.getPlugins().apply(ShipkitConfigurationPlugin.class).getConfiguration();
+			val githubRepo = getGithubRepo();
+			System.out.println(githubRepo);
+			configuration.getGitHub().setRepository(githubRepo);
+			configuration.getGitHub().setReadOnlyAuthToken("bf61e48ac43dbad4d4a63ff664f5f9446adaa9c5");
+
+			project.getPlugins().apply(ShipkitJavaPlugin.class);
+			project.getPlugins().apply(BintrayPlugin.class);
+
+			if (settings.minecraft != null) {
+				configuration.getGit().setTagPrefix('v' + settings.minecraft + '_');
+				configuration.getGit().setReleasableBranchRegex('^' + Pattern.quote(settings.minecraft) + "(/|$)");
+			}
+
+			project.allprojects(it -> {
+				it.getPlugins().withId("org.shipkit.bintray", ignored -> {
+					val bintray = it.getExtensions().getByType(BintrayExtension.class);
+					bintray.setUser("nallar");
+					bintray.setKey(System.getenv("BINTRAY_KEY"));
+					val pkg = bintray.getPkg();
+					pkg.setName(project.getName());
+					pkg.setRepo("minimallycorrectmaven");
+					pkg.setUserOrg("minimallycorrect");
+					pkg.setVcsUrl(getVcsUrl());
+					pkg.setGithubReleaseNotesFile(RELEASE_NOTES_PATH);
+					pkg.setWebsiteUrl(getWebsiteUrl(githubRepo));
+					pkg.setLicenses(settings.license);
+					pkg.setLabels(settings.labels);
+					pkg.setDesc(settings.description);
+					if (githubRepo != null) {
+						pkg.setGithubRepo(githubRepo);
+						pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
+					}
+				});
+			});
+		}
+
 		if (settings.artifacts) {
 			addArtifact("sources", sourceSets.getByName("main").getAllSource());
 			addArtifact("javadoc", ((Javadoc) project.getTasks().getByName("javadoc")).getOutputs());
-			addArtifact("deobf", sourceSets.getByName("main").getOutput());
-		}
-
-		if (settings.shipkit) {
-			project.getPlugins().apply(ShipkitConfigurationPlugin.class).getConfiguration();
+			if (settings.minecraft != null)
+				addArtifact("deobf", sourceSets.getByName("main").getOutput());
 		}
 
 		if (settings.spotBugs) {
@@ -188,6 +261,27 @@ public class DefaultsPlugin implements Plugin<Project> {
 			val resources = project.getTasks().maybeCreate("procesResources", ProcessResources.class);
 			resources.getInputs().properties(map);
 			resources.filesMatching("mcmod.info", it -> it.expand(map));
+
+			val apiKey = System.getenv("CURSEFORGE_API_KEY");
+			if (settings.curseforgeProject != null && apiKey != null) {
+				project.getPlugins().apply(CurseGradlePlugin.class);
+				val extension = project.getExtensions().getByType(CurseExtension.class);
+				extension.setApiKey(apiKey);
+				val curseProject = new CurseProject();
+				curseProject.setId(settings.curseforgeProject);
+				curseProject.setApiKey(apiKey);
+				curseProject.setChangelog(com.google.common.io.Files.toString(project.file(RELEASE_NOTES_PATH), Charsets.UTF_8));
+				curseProject.setReleaseType("beta");
+				maybeAddArtifact("sourceJar", curseProject);
+				maybeAddArtifact("deobfJar", curseProject);
+				maybeAddArtifact("javadocJar", curseProject);
+				extension.getCurseProjects().add(curseProject);
+			}
+
+			if (!project.getVersion().toString().contains(settings.minecraft))
+				project.getTasks().getByName("jar").doFirst(it -> {
+					throw new RuntimeException("project version " + project.getVersion() + " doesn't include minecraft version " + settings.minecraft + ", probable screwup");
+				});
 		}
 
 		if (settings.wrapperJavaArgs != null) {
@@ -201,8 +295,28 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 	}
 
+	private void maybeAddArtifact(String name, CurseProject curseProject) {
+		val curseforge = project.getTasks().findByName("curseforge");
+		val task = project.getTasks().findByName(name);
+		if (curseforge == null || task == null)
+			return;
+		curseforge.dependsOn(task);
+		curseProject.addArtifact(task);
+	}
+
+	private String getWebsiteUrl(String githubRepo) {
+		if (settings.websiteUrl != null)
+			return settings.websiteUrl;
+		if (githubRepo != null)
+			return (settings.websiteUrl = "https://github.com/" + githubRepo);
+		return null;
+	}
+
 	private void addArtifact(String name, Object... files) {
-		val task = project.getTasks().maybeCreate(name + "Jar", Jar.class);
+		if (project.getTasks().findByName(name + "Jar") != null)
+			return;
+
+		val task = project.getTasks().create(name + "Jar", Jar.class);
 		task.setClassifier(name);
 		task.from(files);
 		project.getArtifacts().add("archives", task);
@@ -286,6 +400,12 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public boolean shipkit = true;
 		public boolean artifacts = true;
 		public String wrapperJavaArgs = null;
+		public String vcsUrl = null;
+		public String websiteUrl = null;
+		public String curseforgeProject = null;
+		public String[] labels;
+		public String license;
+		public String description;
 
 		@Override
 		public Void call() {
