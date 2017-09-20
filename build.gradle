@@ -20,6 +20,7 @@ configurations.all { resolutionStrategy.cacheChangingModulesFor 30, 'seconds' }
 
 dependencies {
 	compileOnly gradleApi()
+	compileOnly 'org.jetbrains:annotations:15.0'
 	compileOnly "org.projectlombok:lombok:1.16.16"
 	compileOnly "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
 	compileOnly "gradle.plugin.com.matthewprenger:CurseGradle:1.0.9"

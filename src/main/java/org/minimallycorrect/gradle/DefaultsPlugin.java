@@ -9,7 +9,6 @@ import com.jfrog.bintray.gradle.BintrayPlugin;
 import com.matthewprenger.cursegradle.CurseExtension;
 import com.matthewprenger.cursegradle.CurseGradlePlugin;
 import com.matthewprenger.cursegradle.CurseProject;
-import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -26,6 +25,8 @@ import org.gradle.api.tasks.wrapper.Wrapper;
 import org.gradle.language.jvm.tasks.ProcessResources;
 import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.testing.jacoco.tasks.JacocoReport;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.shipkit.internal.gradle.configuration.ShipkitConfigurationPlugin;
 import org.shipkit.internal.gradle.java.ShipkitJavaPlugin;
 
@@ -52,7 +53,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 	@SneakyThrows
 	@Override
-	public void apply(Project project) {
+	public void apply(@NotNull Project project) {
 		project.getExtensions().add("minimallyCorrectDefaults", settings);
 		this.project = project;
 		project.afterEvaluate(this::afterEvaluate);
@@ -99,6 +100,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 	}
 
+	@Nullable
 	private String getGithubRepo() {
 		String vcsUrl = getVcsUrl();
 		if (vcsUrl == null)
@@ -131,7 +133,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 		project.getRepositories().jcenter();
 		project.getRepositories().maven(it -> it.setUrl("https://repo.nallar.me/"));
-		val javaPluginConvention = project.getConvention().findPlugin(JavaPluginConvention.class);
+		val javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
 		val sourceSets = javaPluginConvention.getSourceSets();
 
 		if (settings.shipkit) {
@@ -149,7 +151,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			}
 
 			project.allprojects(it -> {
-				it.getPlugins().withId("org.shipkit.bintray", ignored -> {
+				if (it.getPlugins().findPlugin("org.shipkit.bintray") != null) {
 					val bintray = it.getExtensions().getByType(BintrayExtension.class);
 					bintray.setUser("nallar");
 					bintray.setKey(System.getenv("BINTRAY_KEY"));
@@ -159,7 +161,9 @@ public class DefaultsPlugin implements Plugin<Project> {
 					pkg.setUserOrg("minimallycorrect");
 					pkg.setVcsUrl(getVcsUrl());
 					pkg.setGithubReleaseNotesFile(RELEASE_NOTES_PATH);
-					pkg.setWebsiteUrl(getWebsiteUrl(githubRepo));
+					val website = getWebsiteUrl(githubRepo);
+					if (website != null)
+						pkg.setWebsiteUrl(website);
 					pkg.setLicenses(settings.license);
 					pkg.setLabels(settings.labels);
 					pkg.setDesc(settings.description);
@@ -167,7 +171,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 						pkg.setGithubRepo(githubRepo);
 						pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
 					}
-				});
+				}
 			});
 		}
 
@@ -206,7 +210,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 		if (settings.spotless) {
 			project.getPlugins().apply(SpotlessPlugin.class);
-			val spotless = project.getExtensions().findByType(SpotlessExtension.class);
+			val spotless = project.getExtensions().getByType(SpotlessExtension.class);
 			//spotless.java(JavaExtension::googleJavaFormat);
 			spotless.java(it -> {
 				File formatFile = new File(project.getBuildDir(), "spotless/eclipse-config.xml");
@@ -303,7 +307,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 		curseProject.addArtifact(task);
 	}
 
-	private String getWebsiteUrl(String githubRepo) {
+	@Nullable
+	private String getWebsiteUrl(@Nullable String githubRepo) {
 		if (settings.websiteUrl != null)
 			return settings.websiteUrl;
 		if (githubRepo != null)
