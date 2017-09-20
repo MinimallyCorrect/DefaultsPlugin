@@ -281,6 +281,9 @@ public class DefaultsPlugin implements Plugin<Project> {
 				maybeAddArtifact("deobfJar", curseProject);
 				maybeAddArtifact("javadocJar", curseProject);
 				extension.getCurseProjects().add(curseProject);
+
+				if (settings.shipkit)
+					project.getTasks().getByName("performRelease").dependsOn(project.getTasks().getByName("bintrayUpload"));
 			}
 		}
 
