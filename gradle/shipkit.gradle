@@ -1,0 +1,22 @@
+//This file was created automatically and is intended to be checked-in.
+shipkit {
+   gitHub.repository = "MinimallyCorrect/DefaultsPlugin"
+
+   gitHub.readOnlyAuthToken = "bf61e48ac43dbad4d4a63ff664f5f9446adaa9c5"
+}
+
+allprojects {
+   plugins.withId("org.shipkit.bintray") {
+       bintray {
+           key = System.getenv("BINTRAY_KEY")
+           pkg {
+               repo = 'minimallycorrectmaven'
+               user = 'nallar'
+               userOrg = 'minimallycorrect'
+               name = 'DefaultsPlugin'
+               licenses = ['MIT']
+               labels = ['continuous delivery', 'release automation', 'shipkit']
+           }
+       }
+   }
+}
