@@ -146,9 +146,9 @@ public class DefaultsPlugin implements Plugin<Project> {
 					Files.copy(is, shipkitGradle.toPath());
 				}
 			}
+			val githubRepo = getGithubRepo();
 			project.getExtensions().add("minimallyCorrectDefaultsShipkit", (Callable<Void>) () -> {
 				val configuration = project.getExtensions().getByType(ShipkitConfiguration.class);
-				val githubRepo = getGithubRepo();
 				configuration.getGitHub().setRepository(githubRepo);
 				configuration.getGitHub().setReadOnlyAuthToken("bf61e48ac43dbad4d4a63ff664f5f9446adaa9c5");
 
@@ -157,35 +157,32 @@ public class DefaultsPlugin implements Plugin<Project> {
 					configuration.getGit().setReleasableBranchRegex('^' + Pattern.quote(settings.minecraft) + "(/|$)");
 				}
 
-				project.allprojects(it -> {
-					if (it.getPlugins().findPlugin("org.shipkit.bintray") != null) {
-						val bintray = it.getExtensions().getByType(BintrayExtension.class);
-						bintray.setUser("nallar");
-						bintray.setKey(System.getenv("BINTRAY_KEY"));
-						val pkg = bintray.getPkg();
-						pkg.setName(project.getName());
-						pkg.setRepo("minimallycorrectmaven");
-						pkg.setUserOrg("minimallycorrect");
-						pkg.setVcsUrl(getVcsUrl());
-						pkg.setGithubReleaseNotesFile(RELEASE_NOTES_PATH);
-						val website = getWebsiteUrl(githubRepo);
-						if (website != null)
-							pkg.setWebsiteUrl(website);
-						pkg.setLicenses(settings.license);
-						pkg.setLabels(settings.labels);
-						pkg.setDesc(settings.description);
-						if (githubRepo != null) {
-							pkg.setGithubRepo(githubRepo);
-							pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
-						}
-						if (settings.minecraft != null)
-							project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
-					}
-				});
 				return null;
 			});
 			project.getPlugins().apply(ShipkitJavaPlugin.class);
 			project.getPlugins().apply(BintrayPlugin.class);
+
+			val bintray = project.getExtensions().getByType(BintrayExtension.class);
+			bintray.setUser("nallar");
+			bintray.setKey(System.getenv("BINTRAY_KEY"));
+			val pkg = bintray.getPkg();
+			pkg.setName(project.getName());
+			pkg.setRepo("minimallycorrectmaven");
+			pkg.setUserOrg("minimallycorrect");
+			pkg.setVcsUrl(getVcsUrl());
+			pkg.setGithubReleaseNotesFile(RELEASE_NOTES_PATH);
+			val website = getWebsiteUrl(githubRepo);
+			if (website != null)
+				pkg.setWebsiteUrl(website);
+			pkg.setLicenses(settings.license);
+			pkg.setLabels(settings.labels);
+			pkg.setDesc(settings.description);
+			if (githubRepo != null) {
+				pkg.setGithubRepo(githubRepo);
+				pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
+			}
+			if (settings.minecraft != null)
+				project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
 		}
 
 		if (settings.artifacts) {
