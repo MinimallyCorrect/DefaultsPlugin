@@ -174,13 +174,20 @@ public class DefaultsPlugin implements Plugin<Project> {
 			val website = getWebsiteUrl(githubRepo);
 			if (website != null)
 				pkg.setWebsiteUrl(website);
-			pkg.setLicenses(settings.license);
+			if (settings.licenses == null)
+				throw new IllegalArgumentException("Must set settings.licenses when shipkit is enabled");
+			pkg.setLicenses(settings.licenses);
+			if (settings.labels == null)
+				throw new IllegalArgumentException("Must set labels when shipkit is enabled");
 			pkg.setLabels(settings.labels);
+			if (settings.description == null)
+				throw new IllegalArgumentException("Must set description when shipkit is enabled");
 			pkg.setDesc(settings.description);
 			if (githubRepo != null) {
 				pkg.setGithubRepo(githubRepo);
 				pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
 			}
+
 			if (settings.minecraft != null)
 				project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
 		}
@@ -441,7 +448,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public String websiteUrl = null;
 		public String curseforgeProject = null;
 		public String[] labels;
-		public String license;
+		public String[] licenses = { "MIT" };
 		public String description;
 
 		@Override
