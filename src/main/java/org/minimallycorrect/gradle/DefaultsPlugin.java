@@ -9,6 +9,7 @@ import com.jfrog.bintray.gradle.BintrayPlugin;
 import com.matthewprenger.cursegradle.CurseExtension;
 import com.matthewprenger.cursegradle.CurseGradlePlugin;
 import com.matthewprenger.cursegradle.CurseProject;
+import com.matthewprenger.cursegradle.CurseUploadTask;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -37,8 +38,8 @@ import java.util.concurrent.*;
 import java.util.regex.*;
 
 public class DefaultsPlugin implements Plugin<Project> {
+	private static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
 	private final Extension settings = new Extension();
-	private final String RELEASE_NOTES_PATH = "docs/release-notes.md";
 	private Project project;
 	private boolean initialised;
 
@@ -275,15 +276,17 @@ public class DefaultsPlugin implements Plugin<Project> {
 				val curseProject = new CurseProject();
 				curseProject.setId(settings.curseforgeProject);
 				curseProject.setApiKey(apiKey);
-				curseProject.setChangelog(com.google.common.io.Files.toString(project.file(RELEASE_NOTES_PATH), Charsets.UTF_8));
+				curseProject.setChangelog(new FileReader(project));
 				curseProject.setReleaseType("beta");
 				maybeAddArtifact("sourceJar", curseProject);
 				maybeAddArtifact("deobfJar", curseProject);
 				maybeAddArtifact("javadocJar", curseProject);
 				extension.getCurseProjects().add(curseProject);
 
-				if (settings.shipkit)
-					project.getTasks().getByName("performRelease").dependsOn(project.getTasks().getByName("bintrayUpload"));
+				if (settings.shipkit) {
+					project.getTasks().withType(CurseUploadTask.class).forEach(it -> it.dependsOn(project.getTasks().getByName("updateReleaseNotes")));
+					project.getTasks().getByName("performRelease").dependsOn(project.getTasks().getByName("curseforge"));
+				}
 			}
 		}
 
@@ -369,6 +372,29 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 
 		throw new IllegalArgumentException("Unsupported minecraft version " + minecraft);
+	}
+
+	private static class FileReader {
+		private final Project project;
+		String cached;
+
+		FileReader(Project project) {
+			this.project = project;
+		}
+
+		@Override
+		public String toString() {
+			String cached = this.cached;
+			if (cached != null)
+				return cached;
+			try {
+				cached = com.google.common.io.Files.toString(project.file(RELEASE_NOTES_PATH), Charsets.UTF_8);
+			} catch (IOException e) {
+				cached = "Failed to read changelog from " + project.file(RELEASE_NOTES_PATH);
+				project.getLogger().error(cached, e);
+			}
+			return (this.cached = cached);
+		}
 	}
 
 	@Data
