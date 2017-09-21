@@ -440,7 +440,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			"org.jetbrains:annotations:15.0"
 		));
 		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Arrays.asList(
-			"org.projectlombok:lombok:1.16.16"
+			"org.projectlombok:lombok:1.16.18"
 		));
 		public String languageLevel = "8";
 		public boolean javaWarnings = true;
