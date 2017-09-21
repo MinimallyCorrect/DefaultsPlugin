@@ -2,8 +2,6 @@ package org.minimallycorrect.gradle;
 
 import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.diffplug.gradle.spotless.SpotlessPlugin;
-import com.google.common.base.Charsets;
-import com.google.common.base.Throwables;
 import com.jfrog.bintray.gradle.BintrayExtension;
 import com.jfrog.bintray.gradle.BintrayPlugin;
 import com.matthewprenger.cursegradle.CurseExtension;
@@ -33,6 +31,7 @@ import org.shipkit.gradle.configuration.ShipkitConfiguration;
 import org.shipkit.internal.gradle.java.ShipkitJavaPlugin;
 
 import java.io.*;
+import java.nio.charset.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -44,6 +43,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	private final Extension settings = new Extension();
 	private Project project;
 	private boolean initialised;
+	private static final Charset CHARSET = Charset.forName("UTF-8");
 
 	private static String packageIfExists(String in) {
 		return in == null || in.isEmpty() ? "." + in : "";
@@ -51,7 +51,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 	@SneakyThrows
 	private static void replace(File file, String from, String to) {
-		Files.write(file.toPath(), new String(Files.readAllBytes(file.toPath()), Charsets.UTF_8).replace(from, to).getBytes(Charsets.UTF_8));
+		Files.write(file.toPath(), new String(Files.readAllBytes(file.toPath()), CHARSET).replace(from, to).getBytes(CHARSET));
 	}
 
 	@SneakyThrows
@@ -126,7 +126,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		});
 		if (result.getExitValue() != 0)
 			throw new Error("Failed to get VCS URL");
-		return (settings.vcsUrl = out.toString(Charsets.UTF_8.name()));
+		return (settings.vcsUrl = out.toString(CHARSET.name()));
 	}
 
 	@SneakyThrows
@@ -243,7 +243,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 							Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 						}
 				} catch (IOException e) {
-					throw Throwables.propagate(e);
+					throw new IOError(e);
 				}
 				it.eclipse().configFile(formatFile);
 				it.custom("Lambda fix", s -> s.replace("} )", "})").replace("} ,", "},"));
@@ -418,7 +418,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			if (cached != null)
 				return cached;
 			try {
-				cached = com.google.common.io.Files.toString(project.file(RELEASE_NOTES_PATH), Charsets.UTF_8);
+				cached = com.google.common.io.Files.toString(project.file(RELEASE_NOTES_PATH), CHARSET);
 			} catch (IOException e) {
 				cached = "Failed to read changelog from " + project.file(RELEASE_NOTES_PATH);
 				project.getLogger().error(cached, e);
@@ -435,7 +435,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public final List<String> dependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
 		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Arrays.asList(
 			"com.google.code.findbugs:jsr305:3.0.2",
-			"net.jcip:jcip-annotations:1.0"
+			"net.jcip:jcip-annotations:1.0",
+			"org.jetbrains:annotations:15.0"
 		));
 		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Arrays.asList(
 			"org.projectlombok:lombok:1.16.16"
