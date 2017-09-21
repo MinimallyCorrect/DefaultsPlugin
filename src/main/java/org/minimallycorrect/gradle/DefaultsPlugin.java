@@ -306,6 +306,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 				extension.getCurseProjects().add(curseProject);
 
 				if (settings.shipkit) {
+					project.getTasks().getByName("bintrayUpload").dependsOn(project.getTasks().getByName("reobfJar"));
 					project.getTasks().withType(CurseUploadTask.class).forEach(it -> it.dependsOn(project.getTasks().getByName("updateReleaseNotes")));
 					project.getTasks().getByName("performRelease").dependsOn(project.getTasks().getByName("curseforge"));
 				}
