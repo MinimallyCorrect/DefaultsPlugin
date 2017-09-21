@@ -28,7 +28,7 @@ import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.testing.jacoco.tasks.JacocoReport;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.shipkit.internal.gradle.configuration.ShipkitConfigurationPlugin;
+import org.shipkit.gradle.configuration.ShipkitConfiguration;
 import org.shipkit.internal.gradle.java.ShipkitJavaPlugin;
 
 import java.io.*;
@@ -138,44 +138,54 @@ public class DefaultsPlugin implements Plugin<Project> {
 		val sourceSets = javaPluginConvention.getSourceSets();
 
 		if (settings.shipkit) {
-			val configuration = project.getPlugins().apply(ShipkitConfigurationPlugin.class).getConfiguration();
-			val githubRepo = getGithubRepo();
-			configuration.getGitHub().setRepository(githubRepo);
-			configuration.getGitHub().setReadOnlyAuthToken("bf61e48ac43dbad4d4a63ff664f5f9446adaa9c5");
+			val shipkitGradle = project.file("gradle/shipkit.gradle");
+			if (!shipkitGradle.exists()) {
+				if (!shipkitGradle.getParentFile().isDirectory() && !shipkitGradle.getParentFile().mkdirs())
+					throw new IOException("Failed to create directory for " + shipkitGradle);
+				try (val is = getClass().getResourceAsStream("/shipkit/shipkit.gradle")) {
+					Files.copy(is, shipkitGradle.toPath());
+				}
+			}
+			project.getExtensions().add("minimallyCorrectDefaultsShipkit", (Callable<Void>) () -> {
+				val configuration = project.getExtensions().getByType(ShipkitConfiguration.class);
+				val githubRepo = getGithubRepo();
+				configuration.getGitHub().setRepository(githubRepo);
+				configuration.getGitHub().setReadOnlyAuthToken("bf61e48ac43dbad4d4a63ff664f5f9446adaa9c5");
 
+				if (settings.minecraft != null) {
+					configuration.getGit().setTagPrefix('v' + settings.minecraft + '_');
+					configuration.getGit().setReleasableBranchRegex('^' + Pattern.quote(settings.minecraft) + "(/|$)");
+				}
+
+				project.allprojects(it -> {
+					if (it.getPlugins().findPlugin("org.shipkit.bintray") != null) {
+						val bintray = it.getExtensions().getByType(BintrayExtension.class);
+						bintray.setUser("nallar");
+						bintray.setKey(System.getenv("BINTRAY_KEY"));
+						val pkg = bintray.getPkg();
+						pkg.setName(project.getName());
+						pkg.setRepo("minimallycorrectmaven");
+						pkg.setUserOrg("minimallycorrect");
+						pkg.setVcsUrl(getVcsUrl());
+						pkg.setGithubReleaseNotesFile(RELEASE_NOTES_PATH);
+						val website = getWebsiteUrl(githubRepo);
+						if (website != null)
+							pkg.setWebsiteUrl(website);
+						pkg.setLicenses(settings.license);
+						pkg.setLabels(settings.labels);
+						pkg.setDesc(settings.description);
+						if (githubRepo != null) {
+							pkg.setGithubRepo(githubRepo);
+							pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
+						}
+						if (settings.minecraft != null)
+							project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
+					}
+				});
+				return null;
+			});
 			project.getPlugins().apply(ShipkitJavaPlugin.class);
 			project.getPlugins().apply(BintrayPlugin.class);
-
-			if (settings.minecraft != null) {
-				configuration.getGit().setTagPrefix('v' + settings.minecraft + '_');
-				configuration.getGit().setReleasableBranchRegex('^' + Pattern.quote(settings.minecraft) + "(/|$)");
-			}
-
-			project.allprojects(it -> {
-				if (it.getPlugins().findPlugin("org.shipkit.bintray") != null) {
-					val bintray = it.getExtensions().getByType(BintrayExtension.class);
-					bintray.setUser("nallar");
-					bintray.setKey(System.getenv("BINTRAY_KEY"));
-					val pkg = bintray.getPkg();
-					pkg.setName(project.getName());
-					pkg.setRepo("minimallycorrectmaven");
-					pkg.setUserOrg("minimallycorrect");
-					pkg.setVcsUrl(getVcsUrl());
-					pkg.setGithubReleaseNotesFile(RELEASE_NOTES_PATH);
-					val website = getWebsiteUrl(githubRepo);
-					if (website != null)
-						pkg.setWebsiteUrl(website);
-					pkg.setLicenses(settings.license);
-					pkg.setLabels(settings.labels);
-					pkg.setDesc(settings.description);
-					if (githubRepo != null) {
-						pkg.setGithubRepo(githubRepo);
-						pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
-					}
-					if (settings.minecraft != null)
-						project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
-				}
-			});
 		}
 
 		if (settings.artifacts) {
