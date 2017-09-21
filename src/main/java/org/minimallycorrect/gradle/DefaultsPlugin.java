@@ -18,6 +18,7 @@ import net.minecraftforge.gradle.user.patcherUser.forge.ForgePlugin;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.DuplicatesStrategy;
+import org.gradle.api.file.FileTree;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -39,6 +40,7 @@ import java.util.regex.*;
 
 public class DefaultsPlugin implements Plugin<Project> {
 	private static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
+	private static final String[] GENERATED_PATHS = {RELEASE_NOTES_PATH};
 	private final Extension settings = new Extension();
 	private Project project;
 	private boolean initialised;
@@ -247,8 +249,14 @@ public class DefaultsPlugin implements Plugin<Project> {
 				it.custom("Lambda fix", s -> s.replace("} )", "})").replace("} ,", "},"));
 				it.custom("noinspection fix", s -> s.replace("// noinspection", "//noinspection"));
 			});
+			spotless.freshmark(it -> {
+				it.target(files("**/*.md"));
+				it.indentWithTabs();
+				it.trimTrailingWhitespace();
+				it.endWithNewline();
+			});
 			spotless.format("misc", it -> {
-				it.target("/.gitignore", "/.gitattributes", "**/*.md", "**/*.sh");
+				it.target(files("/.gitignore", "/.gitattributes", "**/*.sh"));
 				it.indentWithTabs();
 				it.trimTrailingWhitespace();
 				it.endWithNewline();
@@ -313,6 +321,14 @@ public class DefaultsPlugin implements Plugin<Project> {
 				replace(wrapper.getBatchScript(), "set " + optsEnvVar + "=", "set " + optsEnvVar + "=" + settings.wrapperJavaArgs);
 			});
 		}
+	}
+
+	private FileTree files(String... globs) {
+		val args = new HashMap<String, Object>();
+		args.put("dir", project.getRootDir());
+		args.put("includes", Arrays.asList(globs));
+		args.put("excludes", Arrays.asList(GENERATED_PATHS));
+		return project.fileTree(args);
 	}
 
 	private void maybeAddArtifact(String name, CurseProject curseProject) {
@@ -448,7 +464,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public String websiteUrl = null;
 		public String curseforgeProject = null;
 		public String[] labels;
-		public String[] licenses = { "MIT" };
+		public String[] licenses = {"MIT"};
 		public String description;
 
 		@Override
