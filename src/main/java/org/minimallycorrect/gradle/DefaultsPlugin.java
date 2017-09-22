@@ -220,28 +220,33 @@ public class DefaultsPlugin implements Plugin<Project> {
 			if (settings.googleJavaFormat) {
 				spotless.java(JavaExtension::googleJavaFormat);
 			} else {
+				File formatFile = getSpotlessFormatFile(project);
 				spotless.java(it -> {
-					File formatFile = new File(project.getBuildDir(), "spotless/eclipse-config.xml");
-					val resource = this.getClass().getResource("/spotless/eclipse-config.xml");
-					try {
-						if (!formatFile.exists() || resource.openConnection().getContentLength() != formatFile.length())
-							try (val is = resource.openStream()) {
-								val parent = formatFile.getParentFile();
-								if (!parent.isDirectory() && !parent.mkdirs())
-									throw new IOError(new IOException("Failed to create " + parent));
-								Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-							}
-					} catch (IOException e) {
-						throw new IOError(e);
-					}
-					if (!formatFile.exists())
-						throw new IOError(new IOException("Failed to create " + formatFile));
 					it.eclipse().configFile(formatFile);
 					it.removeUnusedImports();
 					it.importOrder("java", "javax", "lombok", "sun", "org", "com", "org.minimallycorrect", "");
 					it.custom("Lambda fix", s -> s.replace("} )", "})").replace("} ,", "},"));
 					it.custom("noinspection fix", s -> s.replace("// noinspection", "//noinspection"));
 					it.endWithNewline();
+				});
+				project.getTasks().whenObjectAdded(it -> {
+					if (it.getName().startsWith("spotlessJava"))
+						it.doFirst((ignored) -> {
+							val resource = this.getClass().getResource("/spotless/eclipse-config.xml");
+							try {
+								if (!formatFile.exists() || resource.openConnection().getContentLength() != formatFile.length())
+									try (val is = resource.openStream()) {
+										val parent = formatFile.getParentFile();
+										if (!parent.isDirectory() && !parent.mkdirs())
+											throw new IOError(new IOException("Failed to create " + parent));
+										Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+									}
+							} catch (IOException e) {
+								throw new IOError(e);
+							}
+							if (!formatFile.exists())
+								throw new IOError(new IOException("Failed to create " + formatFile));
+						});
 				});
 			}
 			if (settings.freshmark) {
@@ -327,6 +332,11 @@ public class DefaultsPlugin implements Plugin<Project> {
 				replace(wrapper.getBatchScript(), "set " + optsEnvVar + "=", "set " + optsEnvVar + "=" + settings.wrapperJavaArgs);
 			});
 		}
+	}
+
+	@NotNull
+	private File getSpotlessFormatFile(Project project) {
+		return new File(project.getBuildDir(), "spotless/eclipse-config.xml");
 	}
 
 	private FileTree files(String... globs) {
