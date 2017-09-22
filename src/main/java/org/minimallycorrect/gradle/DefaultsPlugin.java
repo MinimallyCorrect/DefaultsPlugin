@@ -1,5 +1,6 @@
 package org.minimallycorrect.gradle;
 
+import com.diffplug.gradle.spotless.JavaExtension;
 import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.diffplug.gradle.spotless.SpotlessPlugin;
 import com.jfrog.bintray.gradle.BintrayExtension;
@@ -15,6 +16,8 @@ import net.minecraftforge.gradle.user.UserBaseExtension;
 import net.minecraftforge.gradle.user.patcherUser.forge.ForgePlugin;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.execution.TaskExecutionGraph;
+import org.gradle.api.execution.TaskExecutionGraphListener;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -40,10 +43,10 @@ import java.util.regex.*;
 public class DefaultsPlugin implements Plugin<Project> {
 	private static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
 	private static final String[] GENERATED_PATHS = {RELEASE_NOTES_PATH};
-	private final Extension settings = new Extension();
+	private Extension settings;
 	private Project project;
 	private boolean initialised;
-	private static final Charset CHARSET = Charset.forName("UTF-8");
+	public static final Charset CHARSET = Charset.forName("UTF-8");
 
 	private static String packageIfExists(String in) {
 		return in == null || in.isEmpty() ? "." + in : "";
@@ -57,8 +60,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 	@SneakyThrows
 	@Override
 	public void apply(@NotNull Project project) {
-		project.getExtensions().add("minimallyCorrectDefaults", settings);
 		this.project = project;
+		project.getExtensions().add("minimallyCorrectDefaults", settings = new Extension());
 		project.afterEvaluate(this::afterEvaluate);
 	}
 
@@ -103,11 +106,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 	}
 
-	@Nullable
 	private String getGithubRepo() {
 		String vcsUrl = getVcsUrl();
-		if (vcsUrl == null)
-			return null;
 		int lastIndexOfSlash = vcsUrl.lastIndexOf('/');
 		int secondLast = vcsUrl.lastIndexOf('/', lastIndexOfSlash - 1);
 		if (secondLast == -1)
@@ -117,16 +117,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 	@SneakyThrows
 	private String getVcsUrl() {
-		if (settings.vcsUrl != null)
-			return settings.vcsUrl;
-		val out = new ByteArrayOutputStream();
-		val result = project.exec(it -> {
-			it.setCommandLine("git", "ls-remote", "--get-url", "origin");
-			it.setStandardOutput(out);
-		});
-		if (result.getExitValue() != 0)
-			throw new Error("Failed to get VCS URL");
-		return (settings.vcsUrl = out.toString(CHARSET.name()));
+		return "git@github.com:" + settings.organisation + '/' + project.getRootProject().getName() + ".git";
 	}
 
 	@SneakyThrows
@@ -173,9 +164,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			pkg.setUserOrg("minimallycorrect");
 			pkg.setVcsUrl(getVcsUrl());
 			pkg.setGithubReleaseNotesFile(RELEASE_NOTES_PATH);
-			val website = getWebsiteUrl(githubRepo);
-			if (website != null)
-				pkg.setWebsiteUrl(website);
+			pkg.setWebsiteUrl(getWebsiteUrl());
 			if (settings.licenses == null)
 				throw new IllegalArgumentException("Must set settings.licenses when shipkit is enabled");
 			pkg.setLicenses(settings.licenses);
@@ -185,10 +174,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 			if (settings.description == null)
 				throw new IllegalArgumentException("Must set description when shipkit is enabled");
 			pkg.setDesc(settings.description);
-			if (githubRepo != null) {
-				pkg.setGithubRepo(githubRepo);
-				pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
-			}
+			pkg.setGithubRepo(githubRepo);
+			pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
 
 			if (settings.minecraft != null)
 				project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
@@ -230,31 +217,39 @@ public class DefaultsPlugin implements Plugin<Project> {
 		if (settings.spotless) {
 			project.getPlugins().apply(SpotlessPlugin.class);
 			val spotless = project.getExtensions().getByType(SpotlessExtension.class);
-			//spotless.java(JavaExtension::googleJavaFormat);
-			spotless.java(it -> {
-				File formatFile = new File(project.getBuildDir(), "spotless/eclipse-config.xml");
-				val resource = this.getClass().getResource("/spotless/eclipse-config.xml");
-				try {
-					if (resource.openConnection().getContentLength() != formatFile.length())
-						try (val is = resource.openStream()) {
-							val parent = formatFile.getParentFile();
-							if (!parent.isDirectory() && !parent.mkdirs())
-								throw new IOError(new IOException("Failed to create " + parent));
-							Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-						}
-				} catch (IOException e) {
-					throw new IOError(e);
-				}
-				it.eclipse().configFile(formatFile);
-				it.custom("Lambda fix", s -> s.replace("} )", "})").replace("} ,", "},"));
-				it.custom("noinspection fix", s -> s.replace("// noinspection", "//noinspection"));
-			});
-			spotless.freshmark(it -> {
-				it.target(files("**/*.md"));
-				it.indentWithTabs();
-				it.trimTrailingWhitespace();
-				it.endWithNewline();
-			});
+			if (settings.googleJavaFormat) {
+				spotless.java(JavaExtension::googleJavaFormat);
+			} else {
+				spotless.java(it -> {
+					File formatFile = new File(project.getBuildDir(), "spotless/eclipse-config.xml");
+					val resource = this.getClass().getResource("/spotless/eclipse-config.xml");
+					try {
+						if (resource.openConnection().getContentLength() != formatFile.length())
+							try (val is = resource.openStream()) {
+								val parent = formatFile.getParentFile();
+								if (!parent.isDirectory() && !parent.mkdirs())
+									throw new IOError(new IOException("Failed to create " + parent));
+								Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+							}
+					} catch (IOException e) {
+						throw new IOError(e);
+					}
+					it.eclipse().configFile(formatFile);
+					it.removeUnusedImports();
+					it.importOrder("java", "javax", "lombok", "sun", "org", "com", "org.minimallycorrect", "");
+					it.custom("Lambda fix", s -> s.replace("} )", "})").replace("} ,", "},"));
+					it.custom("noinspection fix", s -> s.replace("// noinspection", "//noinspection"));
+					it.endWithNewline();
+				});
+			}
+			if (settings.freshmark) {
+				spotless.freshmark(it -> {
+					it.properties(props -> props.putAll(settings.toProperties()));
+					it.target(files("**/*.md"));
+					it.indentWithTabs();
+					it.endWithNewline();
+				});
+			}
 			spotless.format("misc", it -> {
 				it.target(files("/.gitignore", "/.gitattributes", "**/*.sh"));
 				it.indentWithTabs();
@@ -307,7 +302,15 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 				if (settings.shipkit) {
 					project.getTasks().getByName("bintrayUpload").dependsOn(project.getTasks().getByName("reobfJar"));
-					project.getTasks().withType(CurseUploadTask.class).forEach(it -> it.dependsOn(project.getTasks().getByName("updateReleaseNotes")));
+					val releaseNotes = project.getTasks().getByName("updateReleaseNotes");
+					project.getTasks().withType(CurseUploadTask.class).forEach(it -> it.dependsOn(releaseNotes));
+					if (settings.spotless)
+						releaseNotes.dependsOn(project.getTasks().getByName("spotlessFreshmarkApply"));
+
+					project.getTasks().whenObjectAdded(it -> {
+						if (it.getName().equals("spotlessFreshmarkApply"))
+							releaseNotes.dependsOn(it);
+					});
 					project.getTasks().getByName("performRelease").dependsOn(project.getTasks().getByName("curseforge"));
 				}
 			}
@@ -341,13 +344,10 @@ public class DefaultsPlugin implements Plugin<Project> {
 		curseProject.addArtifact(task);
 	}
 
-	@Nullable
-	private String getWebsiteUrl(@Nullable String githubRepo) {
+	private String getWebsiteUrl() {
 		if (settings.websiteUrl != null)
 			return settings.websiteUrl;
-		if (githubRepo != null)
-			return (settings.websiteUrl = "https://github.com/" + githubRepo);
-		return null;
+		return (settings.websiteUrl = "https://github.com/" + getGithubRepo());
 	}
 
 	private void addArtifact(String name, Object... files) {
@@ -458,6 +458,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"
 		);
 		public boolean spotless = true;
+		public boolean googleJavaFormat = false;
 		public boolean jacoco = true;
 		public boolean shipkit = true;
 		public boolean artifacts = true;
@@ -468,11 +469,31 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public String[] labels;
 		public String[] licenses = {"MIT"};
 		public String description;
+		public String organisation = "MinimallyCorrect";
+		public String bintrayRepo = (organisation + "/minimallycorrectmaven").toLowerCase();
+		public boolean freshmark = project.hasProperty("applyFreshmark") || project.getGradle().getStartParameter().getTaskNames().equals(Collections.singletonList("performRelease"));
 
 		@Override
 		public Void call() {
 			DefaultsPlugin.this.configure();
 			return null;
+		}
+
+		Map<String, Object> toProperties() {
+			val props = new HashMap<String, Object>();
+			props.put("organisation", organisation);
+			props.put("bintrayrepo", bintrayRepo);
+			props.put("name", project.getName());
+			props.put("group", project.getGroup());
+			props.put("version", project.getVersion());
+			if (licenses.length == 1)
+				props.put("license", licenses[0]);
+			props.put("licenses", Arrays.toString(licenses));
+			props.put("releaseNotesPath", RELEASE_NOTES_PATH);
+			props.put("branch", Git.getBranch(project));
+			props.put("discordId", "313371711632441344");
+			props.put("discordInvite", "https://discord.gg/YrV3bDm");
+			return props;
 		}
 	}
 }
