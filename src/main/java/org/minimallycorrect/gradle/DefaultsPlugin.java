@@ -224,7 +224,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 					File formatFile = new File(project.getBuildDir(), "spotless/eclipse-config.xml");
 					val resource = this.getClass().getResource("/spotless/eclipse-config.xml");
 					try {
-						if (resource.openConnection().getContentLength() != formatFile.length())
+						if (!formatFile.exists() || resource.openConnection().getContentLength() != formatFile.length())
 							try (val is = resource.openStream()) {
 								val parent = formatFile.getParentFile();
 								if (!parent.isDirectory() && !parent.mkdirs())
@@ -234,6 +234,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 					} catch (IOException e) {
 						throw new IOError(e);
 					}
+					if (!formatFile.exists())
+						throw new IOError(new IOException("Failed to create " + formatFile));
 					it.eclipse().configFile(formatFile);
 					it.removeUnusedImports();
 					it.importOrder("java", "javax", "lombok", "sun", "org", "com", "org.minimallycorrect", "");
