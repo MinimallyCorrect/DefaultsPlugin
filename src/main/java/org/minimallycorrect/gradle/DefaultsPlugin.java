@@ -1,19 +1,25 @@
 package org.minimallycorrect.gradle;
 
-import com.diffplug.gradle.spotless.JavaExtension;
-import com.diffplug.gradle.spotless.SpotlessExtension;
-import com.diffplug.gradle.spotless.SpotlessPlugin;
-import com.jfrog.bintray.gradle.BintrayExtension;
-import com.jfrog.bintray.gradle.BintrayPlugin;
-import com.matthewprenger.cursegradle.CurseExtension;
-import com.matthewprenger.cursegradle.CurseGradlePlugin;
-import com.matthewprenger.cursegradle.CurseProject;
-import com.matthewprenger.cursegradle.CurseUploadTask;
+import java.io.File;
+import java.io.IOError;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
+
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
-import net.minecraftforge.gradle.user.UserBaseExtension;
-import net.minecraftforge.gradle.user.patcherUser.forge.ForgePlugin;
+
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.DuplicatesStrategy;
@@ -34,21 +40,18 @@ import org.shipkit.internal.gradle.versionupgrade.CiUpgradeDownstreamPlugin;
 import org.shipkit.internal.gradle.versionupgrade.UpgradeDependencyPlugin;
 import org.shipkit.internal.gradle.versionupgrade.UpgradeDownstreamExtension;
 
-import java.io.File;
-import java.io.IOError;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
+import com.diffplug.gradle.spotless.JavaExtension;
+import com.diffplug.gradle.spotless.SpotlessExtension;
+import com.diffplug.gradle.spotless.SpotlessPlugin;
+import com.jfrog.bintray.gradle.BintrayExtension;
+import com.jfrog.bintray.gradle.BintrayPlugin;
+import com.matthewprenger.cursegradle.CurseExtension;
+import com.matthewprenger.cursegradle.CurseGradlePlugin;
+import com.matthewprenger.cursegradle.CurseProject;
+import com.matthewprenger.cursegradle.CurseUploadTask;
+
+import net.minecraftforge.gradle.user.UserBaseExtension;
+import net.minecraftforge.gradle.user.patcherUser.forge.ForgePlugin;
 
 public class DefaultsPlugin implements Plugin<Project> {
 	static final Charset CHARSET = Charset.forName("UTF-8");
@@ -212,28 +215,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 		if (settings.spotBugs) {
 			/* TODO: use once https://github.com/gradle/gradle/pull/2538 is done */
-			/*
-			project.getPlugins().apply("com.github.spotbugs");
-			//project.getDependencies().add("spotbugs", "com.github.spotbugs:spotbugs:3.1.0-RC5");
-			val extension = (SpotBugsExtension) project.getExtensions().getByName("spotbugs");
-			extension.setToolVersion("3.1.0-RC5");
-			val javaPluginConvention = project.getConvention().findPlugin(JavaPluginConvention.class);
-			extension.setSourceSets(Collections.singleton(javaPluginConvention.getSourceSets().getByName("main")));
-			extension.setIgnoreFailures(false);
-			extension.setReportsDir(project.file("build/findbugs"));
-			extension.setEffort("max");
-			extension.setReportLevel("low");
-			StringBuilder fbExclude = new StringBuilder();
-			fbExclude.append("<FindBugsFilter><Match>");
-			for (String findBugsExcludeBug : settings.spotBugsExclusions)
-				fbExclude.append("<Not><Bug pattern=\"").append(findBugsExcludeBug).append("\"/></Not>");
-			fbExclude.append("</Match></FindBugsFilter>");
-			extension.setIncludeFilterConfig(project.getResources().getText().fromString(fbExclude.toString()));
-			project.getTasks().withType(FindBugs.class, it -> {
-				it.getReports().forEach(report -> report.setEnabled(false));
-				it.getReports().getHtml().setEnabled(true);
-			});
-			*/
+			/* project.getPlugins().apply("com.github.spotbugs"); //project.getDependencies().add("spotbugs", "com.github.spotbugs:spotbugs:3.1.0-RC5"); val extension = (SpotBugsExtension) project.getExtensions().getByName("spotbugs"); extension.setToolVersion("3.1.0-RC5"); val javaPluginConvention = project.getConvention().findPlugin(JavaPluginConvention.class); extension.setSourceSets(Collections.singleton(javaPluginConvention.getSourceSets().getByName("main"))); extension.setIgnoreFailures(false); extension.setReportsDir(project.file("build/findbugs")); extension.setEffort("max"); extension.setReportLevel("low"); StringBuilder fbExclude = new StringBuilder(); fbExclude.append("<FindBugsFilter><Match>"); for (String findBugsExcludeBug : settings.spotBugsExclusions) fbExclude.append("<Not><Bug pattern=\"").append(findBugsExcludeBug).append("\"/></Not>"); fbExclude.append("</Match></FindBugsFilter>");
+			 * extension.setIncludeFilterConfig(project.getResources().getText().fromString(fbExclude.toString())); project.getTasks().withType(FindBugs.class, it -> { it.getReports().forEach(report -> report.setEnabled(false)); it.getReports().getHtml().setEnabled(true); }); */
 		}
 
 		if (settings.spotless) {
@@ -247,8 +230,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 					it.eclipse().configFile(formatFile);
 					it.removeUnusedImports();
 					it.importOrder("java", "javax", "lombok", "sun", "org", "com", "org.minimallycorrect", "");
-					it.custom("Lambda fix", s -> s.replace("} )", "})").replace("} ,", "},"));
-					it.custom("noinspection fix", s -> s.replace("// noinspection", "//noinspection"));
+					it.custom("Lambda fix", s -> s.replace("})", "})").replace("},", "},"));
+					it.custom("noinspection fix", s -> s.replace("//noinspection", "//noinspection"));
 					it.endWithNewline();
 				});
 				project.getTasks().whenObjectAdded(it -> {
@@ -477,17 +460,14 @@ public class DefaultsPlugin implements Plugin<Project> {
 	@Data
 	public class Extension implements Callable<Void> {
 		public final List<String> repos = new ArrayList<>(Arrays.asList(
-			"https://repo.nallar.me/"
-		));
+			"https://repo.nallar.me/"));
 		public final List<String> dependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
 		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Arrays.asList(
 			"com.google.code.findbugs:jsr305:3.0.2",
 			"net.jcip:jcip-annotations:1.0",
-			"org.jetbrains:annotations:15.0"
-		));
+			"org.jetbrains:annotations:15.0"));
 		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Arrays.asList(
-			"org.projectlombok:lombok:1.16.18"
-		));
+			"org.projectlombok:lombok:1.16.18"));
 		public final List<String> downstreamRepositories = new ArrayList<>();
 		public String languageLevel = "8";
 		public boolean javaWarnings = true;
@@ -502,8 +482,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			"SE_NO_SERIALVERSIONID",
 			"MS_SHOULD_BE_FINAL",
 			"MS_CANNOT_BE_FINAL",
-			"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"
-		);
+			"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE");
 		public boolean spotless = true;
 		public boolean googleJavaFormat = false;
 		public boolean jacoco = true;

@@ -1,10 +1,11 @@
 package org.minimallycorrect.gradle;
 
+import java.io.ByteArrayOutputStream;
+
 import lombok.SneakyThrows;
 import lombok.val;
-import org.gradle.api.Project;
 
-import java.io.ByteArrayOutputStream;
+import org.gradle.api.Project;
 
 public class Git {
 	@SneakyThrows
