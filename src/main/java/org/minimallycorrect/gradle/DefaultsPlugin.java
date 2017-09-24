@@ -250,8 +250,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 					it.eclipse().configFile(formatFile);
 					it.removeUnusedImports();
 					it.importOrder("java", "javax", "lombok", "sun", "org", "com", "org.minimallycorrect", "");
-					it.custom("Lambda fix", s -> s.replace("})", "})").replace("},", "},"));
-					it.custom("noinspection fix", s -> s.replace("//noinspection", "//noinspection"));
 					it.endWithNewline();
 				});
 				project.getTasks().whenObjectAdded(it -> {
