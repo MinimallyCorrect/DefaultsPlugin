@@ -16,8 +16,6 @@ import net.minecraftforge.gradle.user.UserBaseExtension;
 import net.minecraftforge.gradle.user.patcherUser.forge.ForgePlugin;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.execution.TaskExecutionGraph;
-import org.gradle.api.execution.TaskExecutionGraphListener;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -29,24 +27,36 @@ import org.gradle.language.jvm.tasks.ProcessResources;
 import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.testing.jacoco.tasks.JacocoReport;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.shipkit.gradle.configuration.ShipkitConfiguration;
 import org.shipkit.internal.gradle.java.ShipkitJavaPlugin;
+import org.shipkit.internal.gradle.version.VersioningPlugin;
+import org.shipkit.internal.gradle.versionupgrade.CiUpgradeDownstreamPlugin;
+import org.shipkit.internal.gradle.versionupgrade.UpgradeDependencyPlugin;
+import org.shipkit.internal.gradle.versionupgrade.UpgradeDownstreamExtension;
 
-import java.io.*;
-import java.nio.charset.*;
-import java.nio.file.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.regex.*;
+import java.io.File;
+import java.io.IOError;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 public class DefaultsPlugin implements Plugin<Project> {
+	static final Charset CHARSET = Charset.forName("UTF-8");
 	private static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
 	private static final String[] GENERATED_PATHS = {RELEASE_NOTES_PATH};
 	private Extension settings;
 	private Project project;
 	private boolean initialised;
-	public static final Charset CHARSET = Charset.forName("UTF-8");
 
 	private static String packageIfExists(String in) {
 		return in == null || in.isEmpty() ? "." + in : "";
@@ -130,7 +140,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 		val javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
 		val sourceSets = javaPluginConvention.getSourceSets();
 
-		if (settings.shipkit) {
+		val shouldApplyShipKit = shouldApplyShipKit();
+		if (shouldApplyShipKit) {
 			val shipkitGradle = project.file("gradle/shipkit.gradle");
 			if (!shipkitGradle.exists()) {
 				if (!shipkitGradle.getParentFile().isDirectory() && !shipkitGradle.getParentFile().mkdirs())
@@ -153,6 +164,10 @@ public class DefaultsPlugin implements Plugin<Project> {
 				return null;
 			});
 			project.getPlugins().apply(ShipkitJavaPlugin.class);
+
+			if (settings.minecraft != null)
+				project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
+
 			project.getPlugins().apply(BintrayPlugin.class);
 
 			val bintray = project.getExtensions().getByType(BintrayExtension.class);
@@ -177,8 +192,15 @@ public class DefaultsPlugin implements Plugin<Project> {
 			pkg.setGithubRepo(githubRepo);
 			pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
 
-			if (settings.minecraft != null)
-				project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
+			if (settings.downstreamRepositories.size() != 0) {
+				project.getPlugins().apply(CiUpgradeDownstreamPlugin.class);
+				project.getExtensions().getByType(UpgradeDownstreamExtension.class).setRepositories(settings.downstreamRepositories);
+			}
+
+			if (isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE))
+				project.getPlugins().apply(UpgradeDependencyPlugin.class);
+		} else if (settings.shipkit) {
+			project.getPlugins().apply(VersioningPlugin.class);
 		}
 
 		if (settings.artifacts) {
@@ -307,7 +329,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 				maybeAddArtifact("javadocJar", curseProject);
 				extension.getCurseProjects().add(curseProject);
 
-				if (settings.shipkit) {
+				if (shouldApplyShipKit) {
 					project.getTasks().getByName("bintrayUpload").dependsOn(project.getTasks().getByName("reobfJar"));
 					val releaseNotes = project.getTasks().getByName("updateReleaseNotes");
 					project.getTasks().withType(CurseUploadTask.class).forEach(it -> it.dependsOn(releaseNotes));
@@ -417,6 +439,18 @@ public class DefaultsPlugin implements Plugin<Project> {
 		throw new IllegalArgumentException("Unsupported minecraft version " + minecraft);
 	}
 
+	private boolean shouldApplyShipKit() {
+		return settings.shipkit && (project.hasProperty("applyShipkit") ||
+			isTaskRequested("testRelease") ||
+			isTaskRequested("initShipkit") ||
+			isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE) ||
+			Objects.equals(System.getenv("TRAVIS"), "true"));
+	}
+
+	private boolean isTaskRequested(String taskName) {
+		return project.getGradle().getStartParameter().getTaskNames().equals(Collections.singletonList(taskName));
+	}
+
 	private static class FileReader {
 		private final Project project;
 		String cached;
@@ -454,6 +488,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Arrays.asList(
 			"org.projectlombok:lombok:1.16.18"
 		));
+		public final List<String> downstreamRepositories = new ArrayList<>();
 		public String languageLevel = "8";
 		public boolean javaWarnings = true;
 		public String minecraft = null;
@@ -483,7 +518,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public String description;
 		public String organisation = "MinimallyCorrect";
 		public String bintrayRepo = (organisation + "/minimallycorrectmaven").toLowerCase();
-		public boolean freshmark = project.hasProperty("applyFreshmark") || project.getGradle().getStartParameter().getTaskNames().equals(Collections.singletonList("performRelease"));
+		public boolean freshmark = project.hasProperty("applyFreshmark") || isTaskRequested("performRelease");
 
 		@Override
 		public Void call() {
