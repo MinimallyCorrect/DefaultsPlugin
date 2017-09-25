@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ import net.minecraftforge.gradle.user.UserBaseExtension;
 import net.minecraftforge.gradle.user.patcherUser.forge.ForgePlugin;
 
 public class DefaultsPlugin implements Plugin<Project> {
-	static final Charset CHARSET = Charset.forName("UTF-8");
+	static final Charset CHARSET = StandardCharsets.UTF_8;
 	private static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
 	private static final String[] GENERATED_PATHS = {RELEASE_NOTES_PATH};
 	private Extension settings;
