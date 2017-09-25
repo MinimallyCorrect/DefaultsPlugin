@@ -483,7 +483,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public final List<String> dependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
 		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Arrays.asList(
 			"com.google.code.findbugs:jsr305:3.0.2",
-			"net.jcip:jcip-annotations:1.0",
 			"org.jetbrains:annotations:15.0"));
 		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Arrays.asList(
 			"org.projectlombok:lombok:1.16.18"));
