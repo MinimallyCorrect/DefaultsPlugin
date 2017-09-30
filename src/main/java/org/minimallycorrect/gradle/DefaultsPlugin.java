@@ -115,7 +115,12 @@ public class DefaultsPlugin implements Plugin<Project> {
 				val options = it.getOptions();
 				options.setDeprecation(true);
 				options.setEncoding("UTF-8");
-				options.getCompilerArgs().addAll(Arrays.asList("-Xlint:all", "-Xlint:-path", "-Xlint:-processing", "-Xlint:-serial", "-XDignore.symbol.file"));
+				options.getCompilerArgs().addAll(Arrays.asList("-Xlint:all", "-Xlint:-path", "-Xlint:-processing", "-Xlint:-serial"));
+				if (settings.ignoreSunInternalWarnings) {
+					options.getCompilerArgs().add("-XDignore.symbol.file");
+					options.setFork(true);
+					options.getForkOptions().setExecutable("javac");
+				}
 			}
 		}
 	}
@@ -516,6 +521,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public String organisation = "MinimallyCorrect";
 		public String bintrayRepo = (organisation + "/minimallycorrectmaven").toLowerCase();
 		public boolean freshmark = project.hasProperty("applyFreshmark") || isTaskRequested("performRelease");
+		public boolean ignoreSunInternalWarnings = false;
 
 		@Override
 		public Void call() {
