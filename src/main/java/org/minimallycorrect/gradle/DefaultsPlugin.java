@@ -121,6 +121,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 					options.setFork(true);
 					options.getForkOptions().setExecutable("javac");
 				}
+				if (settings.treatWarningsAsErrors)
+					options.getCompilerArgs().add("-Werror");
 			}
 		}
 	}
@@ -522,6 +524,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public String bintrayRepo = (organisation + "/minimallycorrectmaven").toLowerCase();
 		public boolean freshmark = project.hasProperty("applyFreshmark") || isTaskRequested("performRelease");
 		public boolean ignoreSunInternalWarnings = false;
+		public boolean treatWarningsAsErrors = true;
 
 		@Override
 		public Void call() {
