@@ -3,17 +3,19 @@
 
 # Speed up build with travis caches
 # https://docs.travis-ci.com/user/languages/java/#Caching
+# Remove often changing files to prevent cache re-upload on no changes in dependencies
 before_cache:
-# remove cached SNAPSHOT dependencies
-  - find $HOME/.gradle/caches/modules-2 -name \*-SNAPSHOT -type d -exec rm -rf {} +
-# these are changed every build and can't be cached
-  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -f  $HOME/.gradle/caches/modules-2/metadata-*/*.bin
-  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-  - rm -fr $HOME/.gradle/caches/*/scripts/
-  - rm -fr $HOME/.gradle/caches/*/scripts-remapped/
-  - rm -fr $HOME/.gradle/caches/*/fileHashes/
-  - rm -fr $HOME/.gradle/caches/transforms-1/transforms-1.lock
+# pom, xml and jar files are known not to change
+# assume non-whitelisted extensions are changing
+# (this will include .lock, .bin, .metadata and potential future additions to gradle's caches folder)
+  - find $HOME/.gradle/caches -type f -not \( -iname \*.pom -o -iname \*.jar -o -iname \*.xml \) -delete
+# jar files which change
+  - rm -fr $HOME/.gradle/caches/*/workerMain/gradle-worker.jar
+# xml files which change
+  - find $HOME/.gradle/caches/modules-2 -name ivy.xml -delete
+# remove left over empty directories
+  - find $HOME/.gradle/caches -type d -empty -delete
+
 cache:
   directories:
     - $HOME/.gradle/caches/
