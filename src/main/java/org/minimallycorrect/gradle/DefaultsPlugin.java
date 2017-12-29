@@ -342,13 +342,16 @@ public class DefaultsPlugin implements Plugin<Project> {
 					project.getTasks().getByName("bintrayUpload").dependsOn(project.getTasks().getByName("reobfJar"));
 					val releaseNotes = project.getTasks().getByName("updateReleaseNotes");
 					project.getTasks().withType(CurseUploadTask.class).forEach(it -> it.dependsOn(releaseNotes));
-					if (settings.spotless)
-						releaseNotes.dependsOn(project.getTasks().getByName("spotlessFreshmarkApply"));
+					if (settings.spotless) {
+						val freshmarkApplyTask = project.getTasks().findByName("spotlessFreshmarkApply");
+						if (freshmarkApplyTask != null)
+							releaseNotes.dependsOn(freshmarkApplyTask);
 
-					project.getTasks().whenObjectAdded(it -> {
-						if (it.getName().equals("spotlessFreshmarkApply"))
-							releaseNotes.dependsOn(it);
-					});
+						project.getTasks().whenObjectAdded(it -> {
+							if (it.getName().equals("spotlessFreshmarkApply"))
+								releaseNotes.dependsOn(it);
+						});
+					}
 					project.getTasks().getByName("performRelease").dependsOn(project.getTasks().getByName("curseforge"));
 				}
 			}
