@@ -495,7 +495,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			"com.google.code.findbugs:jsr305:3.0.2",
 			"org.jetbrains:annotations:15.0"));
 		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Arrays.asList(
-			"org.projectlombok:lombok:1.16.18"));
+			"org.projectlombok:lombok:1.16.20"));
 		public final List<String> downstreamRepositories = new ArrayList<>();
 		public String languageLevel = "8";
 		public boolean javaWarnings = true;
