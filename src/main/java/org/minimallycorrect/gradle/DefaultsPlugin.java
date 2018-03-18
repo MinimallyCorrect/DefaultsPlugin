@@ -413,6 +413,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 		minecraft.setVersion(mcVersion + '-' + getForge(mcVersion));
 		minecraft.setMappings(getMappings(mcVersion));
 		minecraft.setRunDir("run");
+		minecraft.replace("@MOD_NAME@", project.getName());
+		minecraft.replace("@MOD_ID@", project.getName().toLowerCase());
 		minecraft.replace("@MOD_VERSION@", project.getVersion().toString());
 		minecraft.replace("@MC_VERSION@", mcVersion);
 	}
