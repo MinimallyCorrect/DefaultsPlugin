@@ -428,18 +428,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		if (settings.forge != null)
 			return settings.forge;
 
-		switch (minecraft) {
-			case "1.12.1":
-				return "14.22.1.2484";
-			case "1.12":
-				return "14.21.0.2340";
-			case "1.11.2":
-				return "13.20.0.2216";
-			case "1.10.2":
-				return "12.18.1.2076";
-		}
-
-		throw new IllegalArgumentException("Unsupported minecraft version " + minecraft);
+		return MinecraftVersions.getForge(minecraft);
 	}
 
 	private boolean shouldApplyShipKit() {

@@ -30,4 +30,21 @@ public class MinecraftVersions {
 
 		throw new IllegalArgumentException("Unsupported minecraft version " + minecraft);
 	}
+
+	public static String getForge(String minecraft) {
+		switch (minecraft) {
+			case "1.12.2":
+				return "14.23.2.2611";
+			case "1.12.1":
+				return "14.22.1.2484";
+			case "1.12":
+				return "14.21.0.2340";
+			case "1.11.2":
+				return "13.20.0.2216";
+			case "1.10.2":
+				return "12.18.1.2076";
+		}
+
+		throw new IllegalArgumentException("Unsupported minecraft version " + minecraft);
+	}
 }
