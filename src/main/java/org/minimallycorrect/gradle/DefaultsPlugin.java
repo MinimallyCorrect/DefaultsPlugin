@@ -333,6 +333,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 				curseProject.setApiKey(apiKey);
 				curseProject.setChangelog(new FileReader(project));
 				curseProject.setReleaseType("beta");
+				//noinspection unchecked
+				curseProject.setGameVersionStrings((List<Object>) (List<?>) MinecraftVersions.getSupportedVersions(settings.minecraft));
 				maybeAddArtifact("sourceJar", curseProject);
 				maybeAddArtifact("deobfJar", curseProject);
 				maybeAddArtifact("javadocJar", curseProject);
@@ -407,7 +409,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	}
 
 	private void configureMinecraft(UserBaseExtension minecraft) {
-		String mcVersion = settings.minecraft;
+		String mcVersion = MinecraftVersions.getSupportedVersions(settings.minecraft).get(0);
 		minecraft.setVersion(mcVersion + '-' + getForge(mcVersion));
 		minecraft.setMappings(getMappings(mcVersion));
 		minecraft.setRunDir("run");
@@ -419,18 +421,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		if (settings.minecraftMappings != null)
 			return settings.minecraftMappings;
 
-		switch (minecraft) {
-			case "1.12.1":
-				return "snapshot_20170624";
-			case "1.12":
-				return "snapshot_20170617";
-			case "1.11.2":
-				return "snapshot_20161220";
-			case "1.10.2":
-				return "snapshot_20160518";
-		}
-
-		throw new IllegalArgumentException("Unsupported minecraft version " + minecraft);
+		return MinecraftVersions.getMappings(minecraft);
 	}
 
 	private String getForge(String minecraft) {
