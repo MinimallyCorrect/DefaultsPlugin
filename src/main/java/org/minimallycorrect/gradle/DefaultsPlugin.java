@@ -319,7 +319,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			map.put("version", project.getVersion().toString());
 			map.put("mcversion", settings.minecraft);
 
-			val resources = project.getTasks().maybeCreate("procesResources", ProcessResources.class);
+			val resources = project.getTasks().maybeCreate("processResources", ProcessResources.class);
 			resources.getInputs().properties(map);
 			resources.filesMatching("mcmod.info", it -> it.expand(map));
 
