@@ -4,7 +4,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class MinecraftVersions {
+import org.gradle.api.Project;
+
+import net.minecraftforge.gradle.user.UserBaseExtension;
+
+public class ForgeExtensions {
 	public static List<String> getSupportedVersions(String majorVersion) {
 		switch (majorVersion) {
 			case "1.12":
@@ -46,5 +50,16 @@ public class MinecraftVersions {
 		}
 
 		throw new IllegalArgumentException("Unsupported minecraft version " + minecraft);
+	}
+
+	static void configureMinecraft(Project project, DefaultsPlugin.Extension settings, UserBaseExtension minecraft) {
+		String mcVersion = getSupportedVersions(settings.minecraft).get(0);
+		minecraft.setVersion(mcVersion + '-' + settings.getForge(mcVersion));
+		minecraft.setMappings(settings.getMappings(mcVersion));
+		minecraft.setRunDir("run");
+		minecraft.replace("@MOD_NAME@", project.getName());
+		minecraft.replace("@MOD_ID@", project.getName().toLowerCase());
+		minecraft.replace("@MOD_VERSION@", project.getVersion().toString());
+		minecraft.replace("@MC_VERSION@", mcVersion);
 	}
 }

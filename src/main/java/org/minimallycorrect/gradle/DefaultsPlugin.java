@@ -99,7 +99,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			attributes.put("Gradle-Version", project.getGradle().getGradleVersion());
 			attributes.put("Group", project.getGroup());
 			attributes.put("Name", project.getName());
-			attributes.put("Implementation-Title", project.getGroup() + "." + project.getName() + packageIfExists(jar.getClassifier()));
+			attributes.put("Implementation-Title", project.getGroup() + "." + project.getName() + packageIfExists(jar.getArchiveClassifier().getOrNull()));
 
 			if (settings.minecraft != null)
 				attributes.put("Minecraft-Version", settings.minecraft);
@@ -142,6 +142,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	}
 
 	@SneakyThrows
+	@SuppressWarnings("unchecked")
 	private void configure() {
 		initialised = true;
 		Project project = this.project;
@@ -311,7 +312,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 		if (settings.minecraft != null) {
 			project.getPlugins().apply(ForgePlugin.class);
-			configureMinecraft(project.getExtensions().getByType(UserBaseExtension.class));
+			ForgeExtensions.configureMinecraft(project, settings, project.getExtensions().getByType(UserBaseExtension.class));
 			if (settings.wrapperJavaArgs == null)
 				settings.wrapperJavaArgs = "-Xmx2G";
 
@@ -334,10 +335,10 @@ public class DefaultsPlugin implements Plugin<Project> {
 				curseProject.setChangelog(new FileReader(project));
 				curseProject.setReleaseType("beta");
 				//noinspection unchecked
-				curseProject.setGameVersionStrings((List<Object>) (List<?>) MinecraftVersions.getSupportedVersions(settings.minecraft));
-				maybeAddArtifact("sourceJar", curseProject);
-				maybeAddArtifact("deobfJar", curseProject);
-				maybeAddArtifact("javadocJar", curseProject);
+				curseProject.setGameVersionStrings((List<Object>) (List<?>) ForgeExtensions.getSupportedVersions(settings.minecraft));
+				CurseExtensions.maybeAddArtifact(project, "sourceJar", curseProject);
+				CurseExtensions.maybeAddArtifact(project, "deobfJar", curseProject);
+				CurseExtensions.maybeAddArtifact(project, "javadocJar", curseProject);
 				extension.getCurseProjects().add(curseProject);
 
 				if (shouldApplyShipKit) {
@@ -383,15 +384,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 		return project.fileTree(args);
 	}
 
-	private void maybeAddArtifact(String name, CurseProject curseProject) {
-		val curseforge = project.getTasks().findByName("curseforge");
-		val task = project.getTasks().findByName(name);
-		if (curseforge == null || task == null)
-			return;
-		curseforge.dependsOn(task);
-		curseProject.addArtifact(task);
-	}
-
 	private String getWebsiteUrl() {
 		if (settings.websiteUrl != null)
 			return settings.websiteUrl;
@@ -403,34 +395,9 @@ public class DefaultsPlugin implements Plugin<Project> {
 			return;
 
 		val task = project.getTasks().create(name + "Jar", Jar.class);
-		task.setClassifier(name);
+		task.getArchiveClassifier().set(name);
 		task.from(files);
 		project.getArtifacts().add("archives", task);
-	}
-
-	private void configureMinecraft(UserBaseExtension minecraft) {
-		String mcVersion = MinecraftVersions.getSupportedVersions(settings.minecraft).get(0);
-		minecraft.setVersion(mcVersion + '-' + getForge(mcVersion));
-		minecraft.setMappings(getMappings(mcVersion));
-		minecraft.setRunDir("run");
-		minecraft.replace("@MOD_NAME@", project.getName());
-		minecraft.replace("@MOD_ID@", project.getName().toLowerCase());
-		minecraft.replace("@MOD_VERSION@", project.getVersion().toString());
-		minecraft.replace("@MC_VERSION@", mcVersion);
-	}
-
-	private String getMappings(String minecraft) {
-		if (settings.minecraftMappings != null)
-			return settings.minecraftMappings;
-
-		return MinecraftVersions.getMappings(minecraft);
-	}
-
-	private String getForge(String minecraft) {
-		if (settings.forge != null)
-			return settings.forge;
-
-		return MinecraftVersions.getForge(minecraft);
 	}
 
 	private boolean shouldApplyShipKit() {
@@ -459,7 +426,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			if (cached != null)
 				return cached;
 			try {
-				cached = com.google.common.io.Files.toString(project.file(RELEASE_NOTES_PATH), CHARSET);
+				cached = com.google.common.io.Files.asCharSource(project.file(RELEASE_NOTES_PATH), CHARSET).read();
 			} catch (IOException e) {
 				cached = "Failed to read changelog from " + project.file(RELEASE_NOTES_PATH);
 				project.getLogger().error(cached, e);
@@ -532,6 +499,20 @@ public class DefaultsPlugin implements Plugin<Project> {
 			props.put("discordId", "313371711632441344");
 			props.put("discordInvite", "https://discord.gg/YrV3bDm");
 			return props;
+		}
+
+		String getForge(String minecraft) {
+			if (forge != null)
+				return forge;
+
+			return ForgeExtensions.getForge(minecraft);
+		}
+
+		String getMappings(String minecraft) {
+			if (minecraftMappings != null)
+				return minecraftMappings;
+
+			return ForgeExtensions.getMappings(minecraft);
 		}
 	}
 }
