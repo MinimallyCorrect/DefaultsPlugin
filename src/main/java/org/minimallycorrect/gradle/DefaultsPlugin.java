@@ -439,12 +439,12 @@ public class DefaultsPlugin implements Plugin<Project> {
 	public class Extension implements Callable<Void> {
 		public final List<String> repos = new ArrayList<>(Arrays.asList(
 			"https://repo.nallar.me/"));
-		public final List<String> dependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
+		public final List<String> dependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly", "annotationProcessor", "testAnnotationProcessor"));
 		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Arrays.asList(
 			"com.google.code.findbugs:jsr305:3.0.2",
-			"org.jetbrains:annotations:15.0"));
+			"org.jetbrains:annotations:18.0.0"));
 		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Arrays.asList(
-			"org.projectlombok:lombok:1.16.20"));
+			"org.projectlombok:lombok:1.18.10"));
 		public final List<String> downstreamRepositories = new ArrayList<>();
 		public String languageLevel = "8";
 		public boolean javaWarnings = true;
