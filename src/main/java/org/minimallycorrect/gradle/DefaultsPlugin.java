@@ -46,17 +46,13 @@ import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.diffplug.gradle.spotless.SpotlessPlugin;
 import com.jfrog.bintray.gradle.BintrayExtension;
 import com.jfrog.bintray.gradle.BintrayPlugin;
-import com.matthewprenger.cursegradle.CurseExtension;
-import com.matthewprenger.cursegradle.CurseGradlePlugin;
-import com.matthewprenger.cursegradle.CurseProject;
-import com.matthewprenger.cursegradle.CurseUploadTask;
 
 import net.minecraftforge.gradle.user.UserBaseExtension;
 import net.minecraftforge.gradle.user.patcherUser.forge.ForgePlugin;
 
 public class DefaultsPlugin implements Plugin<Project> {
 	static final Charset CHARSET = StandardCharsets.UTF_8;
-	private static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
+	protected static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
 	private static final String[] GENERATED_PATHS = {RELEASE_NOTES_PATH};
 	private Extension settings;
 	private Project project;
@@ -142,7 +138,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 	}
 
 	@SneakyThrows
-	@SuppressWarnings("unchecked")
 	private void configure() {
 		initialised = true;
 		Project project = this.project;
@@ -326,37 +321,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 			val apiKey = System.getenv("CURSEFORGE_API_KEY");
 			if (settings.curseforgeProject != null && apiKey != null) {
-				project.getPlugins().apply(CurseGradlePlugin.class);
-				val extension = project.getExtensions().getByType(CurseExtension.class);
-				extension.setApiKey(apiKey);
-				val curseProject = new CurseProject();
-				curseProject.setId(settings.curseforgeProject);
-				curseProject.setApiKey(apiKey);
-				curseProject.setChangelog(new FileReader(project));
-				curseProject.setReleaseType("beta");
-				//noinspection unchecked
-				curseProject.setGameVersionStrings((List<Object>) (List<?>) ForgeExtensions.getSupportedVersions(settings.minecraft));
-				CurseExtensions.maybeAddArtifact(project, "sourceJar", curseProject);
-				CurseExtensions.maybeAddArtifact(project, "deobfJar", curseProject);
-				CurseExtensions.maybeAddArtifact(project, "javadocJar", curseProject);
-				extension.getCurseProjects().add(curseProject);
-
-				if (shouldApplyShipKit) {
-					project.getTasks().getByName("bintrayUpload").dependsOn(project.getTasks().getByName("reobfJar"));
-					val releaseNotes = project.getTasks().getByName("updateReleaseNotes");
-					project.getTasks().withType(CurseUploadTask.class).forEach(it -> it.dependsOn(releaseNotes));
-					if (settings.spotless) {
-						val freshmarkApplyTask = project.getTasks().findByName("spotlessFreshmarkApply");
-						if (freshmarkApplyTask != null)
-							releaseNotes.dependsOn(freshmarkApplyTask);
-
-						project.getTasks().whenObjectAdded(it -> {
-							if (it.getName().equals("spotlessFreshmarkApply"))
-								releaseNotes.dependsOn(it);
-						});
-					}
-					project.getTasks().getByName("performRelease").dependsOn(project.getTasks().getByName("curseforge"));
-				}
+				CurseExtensions.applyCursePlugin(settings, project, shouldApplyShipKit, apiKey);
 			}
 		}
 
@@ -410,29 +375,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 	private boolean isTaskRequested(String taskName) {
 		return project.getGradle().getStartParameter().getTaskNames().equals(Collections.singletonList(taskName));
-	}
-
-	private static class FileReader {
-		private final Project project;
-		String cached;
-
-		FileReader(Project project) {
-			this.project = project;
-		}
-
-		@Override
-		public String toString() {
-			String cached = this.cached;
-			if (cached != null)
-				return cached;
-			try {
-				cached = com.google.common.io.Files.asCharSource(project.file(RELEASE_NOTES_PATH), CHARSET).read();
-			} catch (IOException e) {
-				cached = "Failed to read changelog from " + project.file(RELEASE_NOTES_PATH);
-				project.getLogger().error(cached, e);
-			}
-			return (this.cached = cached);
-		}
 	}
 
 	@Data
