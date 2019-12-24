@@ -261,7 +261,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 					it.importOrder("java", "javax", "lombok", "sun", "org", "com", "org.minimallycorrect", "");
 					it.endWithNewline();
 				});
-				project.getTasks().whenObjectAdded(it -> {
+				project.getTasks().all(it -> {
 					if (it.getName().startsWith("spotlessJava"))
 						it.doFirst((ignored) -> {
 							val resource = this.getClass().getResource("/spotless/eclipse-config.xml");

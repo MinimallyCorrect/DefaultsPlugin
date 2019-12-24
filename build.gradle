@@ -2,7 +2,6 @@ buildscript {
 	repositories { jcenter() }
 	dependencies {
 		classpath 'org.minimallycorrect.gradle:DefaultsPlugin:0.0.29'
-		classpath "com.diffplug.spotless:spotless-plugin-gradle:3.26.1"
 		classpath "org.shipkit:shipkit:2.2.5"
 	}
 }
@@ -23,6 +22,7 @@ minimallyCorrectDefaults {
 	lombokDependencyCoordinates.add("org.projectlombok:lombok:1.18.10")
 	dependencyTargets.add("annotationProcessor")
 	dependencyTargets.add("testAnnotationProcessor")
+	spotless = false
 } ()
 
 repositories {
