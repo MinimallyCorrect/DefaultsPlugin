@@ -30,6 +30,7 @@ import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.api.tasks.wrapper.Wrapper;
+import org.gradle.external.javadoc.CoreJavadocOptions;
 import org.gradle.language.jvm.tasks.ProcessResources;
 import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.testing.jacoco.tasks.JacocoReport;
@@ -208,6 +209,17 @@ public class DefaultsPlugin implements Plugin<Project> {
 				project.getPlugins().apply(UpgradeDependencyPlugin.class);
 		} else if (settings.shipkit) {
 			project.getPlugins().apply(VersioningPlugin.class);
+		}
+
+		if (settings.noDocLint) {
+			project.getTasks().all((it) -> {
+				if (it instanceof Javadoc) {
+					val options = ((Javadoc) it).getOptions();
+					if (options instanceof CoreJavadocOptions) {
+						((CoreJavadocOptions) options).addStringOption("Xdoclint:none", "-quiet");
+					}
+				}
+			});
 		}
 
 		if (settings.artifacts) {
@@ -419,6 +431,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public boolean freshmark = project.hasProperty("applyFreshmark") || isTaskRequested("performRelease");
 		public boolean ignoreSunInternalWarnings = false;
 		public boolean treatWarningsAsErrors = true;
+		public boolean noDocLint = true;
 
 		@Override
 		public Void call() {
