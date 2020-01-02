@@ -21,8 +21,10 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
 
+import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -51,6 +53,8 @@ import com.jfrog.bintray.gradle.BintrayPlugin;
 import net.minecraftforge.gradle.user.UserBaseExtension;
 import net.minecraftforge.gradle.user.patcherUser.forge.ForgePlugin;
 
+// gradle warning: Using Java lambdas is not supported, use an (anonymous) inner class instead.
+@SuppressWarnings("Convert2Lambda")
 public class DefaultsPlugin implements Plugin<Project> {
 	static final Charset CHARSET = StandardCharsets.UTF_8;
 	protected static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
@@ -270,21 +274,24 @@ public class DefaultsPlugin implements Plugin<Project> {
 				});
 				project.getTasks().all(it -> {
 					if (it.getName().startsWith("spotlessJava"))
-						it.doFirst((ignored) -> {
-							val resource = this.getClass().getResource("/spotless/eclipse-config.xml");
-							try {
-								if (!formatFile.exists() || resource.openConnection().getContentLength() != formatFile.length())
-									try (val is = resource.openStream()) {
-										val parent = formatFile.getParentFile();
-										if (!parent.isDirectory() && !parent.mkdirs())
-											throw new IOError(new IOException("Failed to create " + parent));
-										Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-									}
-							} catch (IOException e) {
-								throw new IOError(e);
+						it.doFirst(new Action<Task>() {
+							@Override
+							public void execute(@NotNull Task ignored) {
+								val resource = DefaultsPlugin.this.getClass().getResource("/spotless/eclipse-config.xml");
+								try {
+									if (!formatFile.exists() || resource.openConnection().getContentLength() != formatFile.length())
+										try (val is = resource.openStream()) {
+											val parent = formatFile.getParentFile();
+											if (!parent.isDirectory() && !parent.mkdirs())
+												throw new IOError(new IOException("Failed to create " + parent));
+											Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+										}
+								} catch (IOException e) {
+									throw new IOError(e);
+								}
+								if (!formatFile.exists())
+									throw new IOError(new IOException("Failed to create " + formatFile));
 							}
-							if (!formatFile.exists())
-								throw new IOError(new IOException("Failed to create " + formatFile));
 						});
 				});
 			}
@@ -340,10 +347,13 @@ public class DefaultsPlugin implements Plugin<Project> {
 		if (settings.wrapperJavaArgs != null) {
 			val wrapper = project.getTasks().maybeCreate("wrapper", Wrapper.class);
 			wrapper.getInputs().property("javaArgs", settings.wrapperJavaArgs);
-			wrapper.doLast(ignored -> {
-				val optsEnvVar = "DEFAULT_JVM_OPTS";
-				replace(wrapper.getScriptFile(), optsEnvVar + "=\"\"", optsEnvVar + "=\"" + settings.wrapperJavaArgs + "\"");
-				replace(wrapper.getBatchScript(), "set " + optsEnvVar + "=", "set " + optsEnvVar + "=" + settings.wrapperJavaArgs);
+			wrapper.doLast(new Action<Task>() {
+				@Override
+				public void execute(Task ignored) {
+					val optsEnvVar = "DEFAULT_JVM_OPTS";
+					replace(wrapper.getScriptFile(), optsEnvVar + "=\"\"", optsEnvVar + "=\"" + settings.wrapperJavaArgs + "\"");
+					replace(wrapper.getBatchScript(), "set " + optsEnvVar + "=", "set " + optsEnvVar + "=" + settings.wrapperJavaArgs);
+				}
 			});
 		}
 	}
