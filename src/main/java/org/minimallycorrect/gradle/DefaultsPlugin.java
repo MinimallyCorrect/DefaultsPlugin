@@ -212,7 +212,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			if (isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE))
 				project.getPlugins().apply(UpgradeDependencyPlugin.class);
 		} else if (settings.shipkit && project.getRootProject() == project && project.getVersion().equals("unspecified")) {
-			val vi = Version.versionInfo(project.file("version.properties"), false).bumpVersion();
+			val vi = Version.versionInfo(project.file("version.properties"), false);
 			final String version = vi.getVersion() + "-SNAPSHOT";
 			project.allprojects(project1 -> project1.setVersion(version));
 		}
