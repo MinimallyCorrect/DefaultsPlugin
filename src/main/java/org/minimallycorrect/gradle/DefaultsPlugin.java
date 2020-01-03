@@ -212,9 +212,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			if (isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE))
 				project.getPlugins().apply(UpgradeDependencyPlugin.class);
 		} else if (settings.shipkit && project.getRootProject() == project && project.getVersion().equals("unspecified")) {
-			val outFile = new File(project.getBuildDir(), "shipkitTempVersionW");
-			Files.copy(project.file("version.properties").toPath(), outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-			val vi = Version.versionInfo(outFile, false).bumpVersion();
+			val vi = Version.versionInfo(project.file("version.properties"), false).bumpVersion();
 			final String version = vi.getVersion() + "-SNAPSHOT";
 			project.allprojects(project1 -> project1.setVersion(version));
 		}
