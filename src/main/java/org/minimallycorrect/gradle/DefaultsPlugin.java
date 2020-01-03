@@ -45,6 +45,7 @@ import org.shipkit.internal.gradle.versionupgrade.UpgradeDependencyPlugin;
 import org.shipkit.internal.gradle.versionupgrade.UpgradeDownstreamExtension;
 
 import com.diffplug.gradle.spotless.JavaExtension;
+import com.diffplug.gradle.spotless.KotlinExtension;
 import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.diffplug.gradle.spotless.SpotlessPlugin;
 import com.jfrog.bintray.gradle.BintrayExtension;
@@ -303,6 +304,13 @@ public class DefaultsPlugin implements Plugin<Project> {
 					it.endWithNewline();
 				});
 			}
+			if (settings.ktLint) {
+				project.getPlugins().all(it -> {
+					if (it.getClass().getCanonicalName().startsWith("org.jetbrains.kotlin")) {
+						spotless.kotlin(KotlinExtension::ktlint);
+					}
+				});
+			}
 			spotless.format("misc", it -> {
 				it.target(files("/.gitignore", "/.gitattributes", "**/*.sh"));
 				it.indentWithTabs();
@@ -439,6 +447,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public String organisation = "MinimallyCorrect";
 		public String bintrayRepo = (organisation + "/minimallycorrectmaven").toLowerCase();
 		public boolean freshmark = project.hasProperty("applyFreshmark") || isTaskRequested("performRelease");
+		public boolean ktLint = true;
 		public boolean ignoreSunInternalWarnings = false;
 		public boolean treatWarningsAsErrors = true;
 		public boolean noDocLint = true;
