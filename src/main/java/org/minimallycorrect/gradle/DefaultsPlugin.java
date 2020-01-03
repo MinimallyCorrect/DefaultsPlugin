@@ -305,9 +305,13 @@ public class DefaultsPlugin implements Plugin<Project> {
 				});
 			}
 			if (settings.ktLint) {
+				boolean[] appliedKotlin = new boolean[]{false};
 				project.getPlugins().all(it -> {
 					if (it.getClass().getCanonicalName().startsWith("org.jetbrains.kotlin")) {
-						spotless.kotlin(KotlinExtension::ktlint);
+						if (!appliedKotlin[0]) {
+							appliedKotlin[0] = true;
+							spotless.kotlin(KotlinExtension::ktlint);
+						}
 					}
 				});
 			}
