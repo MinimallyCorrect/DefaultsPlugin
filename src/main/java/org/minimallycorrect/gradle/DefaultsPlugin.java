@@ -39,10 +39,10 @@ import org.gradle.testing.jacoco.tasks.JacocoReport;
 import org.jetbrains.annotations.NotNull;
 import org.shipkit.gradle.configuration.ShipkitConfiguration;
 import org.shipkit.internal.gradle.java.ShipkitJavaPlugin;
-import org.shipkit.internal.gradle.version.VersioningPlugin;
 import org.shipkit.internal.gradle.versionupgrade.CiUpgradeDownstreamPlugin;
 import org.shipkit.internal.gradle.versionupgrade.UpgradeDependencyPlugin;
 import org.shipkit.internal.gradle.versionupgrade.UpgradeDownstreamExtension;
+import org.shipkit.internal.version.Version;
 
 import com.diffplug.gradle.spotless.JavaExtension;
 import com.diffplug.gradle.spotless.SpotlessExtension;
@@ -211,8 +211,12 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 			if (isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE))
 				project.getPlugins().apply(UpgradeDependencyPlugin.class);
-		} else if (settings.shipkit) {
-			project.getPlugins().apply(VersioningPlugin.class);
+		} else if (settings.shipkit && project.getRootProject() == project && project.getVersion().equals("unspecified")) {
+			val outFile = new File(project.getBuildDir(), "shipkitTempVersionW");
+			Files.copy(project.file("version.properties").toPath(), outFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			val vi = Version.versionInfo(outFile, false).bumpVersion();
+			final String version = vi.getVersion() + "-SNAPSHOT";
+			project.allprojects(project1 -> project1.setVersion(version));
 		}
 
 		if (settings.noDocLint) {
