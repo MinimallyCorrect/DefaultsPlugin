@@ -21,6 +21,7 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
 
+import org.apache.groovy.util.Maps;
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -45,7 +46,6 @@ import org.shipkit.internal.gradle.versionupgrade.UpgradeDependencyPlugin;
 import org.shipkit.internal.gradle.versionupgrade.UpgradeDownstreamExtension;
 
 import com.diffplug.gradle.spotless.JavaExtension;
-import com.diffplug.gradle.spotless.KotlinExtension;
 import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.diffplug.gradle.spotless.SpotlessPlugin;
 import com.jfrog.bintray.gradle.BintrayExtension;
@@ -310,7 +310,9 @@ public class DefaultsPlugin implements Plugin<Project> {
 					if (it.getClass().getCanonicalName().startsWith("org.jetbrains.kotlin")) {
 						if (!appliedKotlin[0]) {
 							appliedKotlin[0] = true;
-							spotless.kotlin(KotlinExtension::ktlint);
+							spotless.kotlin(kotlin -> kotlin.ktlint().userData(Maps.of(
+								"indent_style", "tab",
+								"indent_size", "unset")));
 						}
 					}
 				});
