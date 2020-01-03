@@ -21,7 +21,6 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
 
-import org.apache.groovy.util.Maps;
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -310,9 +309,10 @@ public class DefaultsPlugin implements Plugin<Project> {
 					if (it.getClass().getCanonicalName().startsWith("org.jetbrains.kotlin")) {
 						if (!appliedKotlin[0]) {
 							appliedKotlin[0] = true;
-							spotless.kotlin(kotlin -> kotlin.ktlint().userData(Maps.of(
-								"indent_style", "tab",
-								"indent_size", "unset")));
+							val map = new HashMap<String, String>();
+							map.put("indent_style", "tab");
+							map.put("indent_size", "unset");
+							spotless.kotlin(kotlin -> kotlin.ktlint().userData(map));
 						}
 					}
 				});
