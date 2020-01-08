@@ -168,6 +168,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 				val configuration = project.getExtensions().getByType(ShipkitConfiguration.class);
 				configuration.getGitHub().setRepository(githubRepo);
 				configuration.getGitHub().setReadOnlyAuthToken("bf61e48ac43dbad4d4a63ff664f5f9446adaa9c5");
+				configuration.getGit().setCommitMessagePostfix("[ci skip-release]");
+				configuration.getReleaseNotes().setIgnoreCommitsContaining(Arrays.asList("[ci skip]", "[ci skip-release]"));
 
 				if (settings.minecraft != null) {
 					configuration.getGit().setTagPrefix('v' + settings.minecraft + '_');
