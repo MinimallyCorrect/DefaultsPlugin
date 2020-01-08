@@ -107,15 +107,16 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 
 		for (JavaCompile it : project.getTasks().withType(JavaCompile.class)) {
+			val options = it.getOptions();
+			options.setEncoding("UTF-8");
+
 			if (settings.languageLevel != null) {
 				it.setSourceCompatibility(settings.languageLevel);
 				it.setTargetCompatibility(settings.languageLevel);
 			}
 
 			if (settings.javaWarnings) {
-				val options = it.getOptions();
 				options.setDeprecation(true);
-				options.setEncoding("UTF-8");
 				options.getCompilerArgs().addAll(Arrays.asList("-Xlint:all", "-Xlint:-path", "-Xlint:-processing", "-Xlint:-serial"));
 				if (settings.ignoreSunInternalWarnings) {
 					options.getCompilerArgs().add("-XDignore.symbol.file");
@@ -139,7 +140,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 	@SneakyThrows
 	private String getVcsUrl() {
-		return "git@github.com:" + settings.organisation + '/' + project.getRootProject().getName() + ".git";
+		return "git://git@github.com:" + settings.organisation + '/' + project.getRootProject().getName() + ".git";
 	}
 
 	@SneakyThrows
@@ -335,7 +336,11 @@ public class DefaultsPlugin implements Plugin<Project> {
 			}
 		}
 
-		for (String target : settings.dependencyTargets) {
+		for (String target : settings.annotationDependencyTargets) {
+			settings.annotationDependencyCoordinates.forEach((it) -> project.getDependencies().add(target, it));
+		}
+
+		for (String target : settings.annotationProcessorDependencyTargets) {
 			settings.annotationDependencyCoordinates.forEach((it) -> project.getDependencies().add(target, it));
 			settings.lombokDependencyCoordinates.forEach((it) -> project.getDependencies().add(target, it));
 		}
@@ -419,11 +424,11 @@ public class DefaultsPlugin implements Plugin<Project> {
 	public class Extension implements Callable<Void> {
 		public final List<String> repos = new ArrayList<>(Arrays.asList(
 			"https://repo.nallar.me/"));
-		public final List<String> dependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly", "annotationProcessor", "testAnnotationProcessor"));
-		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Arrays.asList(
-			"com.google.code.findbugs:jsr305:3.0.2",
+		public final List<String> annotationDependencyTargets = new ArrayList<>(Arrays.asList("annotationProcessor", "testAnnotationProcessor"));
+		public final List<String> annotationProcessorDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly", "annotationProcessor", "testAnnotationProcessor"));
+		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Collections.singletonList(
 			"org.jetbrains:annotations:18.0.0"));
-		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Arrays.asList(
+		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Collections.singletonList(
 			"org.projectlombok:lombok:1.18.10"));
 		public final List<String> downstreamRepositories = new ArrayList<>();
 		public String languageLevel = "8";
