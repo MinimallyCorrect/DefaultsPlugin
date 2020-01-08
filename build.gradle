@@ -32,8 +32,8 @@ dependencies {
 	compileOnly("gradle.plugin.com.matthewprenger:CurseGradle:1.4.0") {
 		transitive = false
 	}
-	compile "com.diffplug.spotless:spotless-plugin-gradle:3.26.1"
-	compile "org.shipkit:shipkit:2.2.5"
+	implementation "com.diffplug.spotless:spotless-plugin-gradle:3.26.1"
+	implementation "org.shipkit:shipkit:2.2.5"
 }
 
 gradlePlugin {
