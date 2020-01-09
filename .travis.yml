@@ -23,7 +23,6 @@ language: java
 jdk:
   - openjdk8
   - openjdk11
-  - openjdk12 # TODO unsupported, remove soon?
   - openjdk13
 
 #Skipping install step to avoid having Travis run arbitrary './gradlew assemble' task
@@ -48,5 +47,5 @@ deploy:
     edge: true
     cleanup: false
     on:
-        jdk: openjdk12
+        jdk: openjdk13
         branch: master
