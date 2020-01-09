@@ -8,11 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.concurrent.Callable;
 
-import lombok.Data;
-import lombok.SneakyThrows;
-import lombok.val;
+import lombok.*;
 
 import org.gradle.api.*;
 import org.gradle.api.file.DuplicatesStrategy;
@@ -45,8 +42,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 	protected static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
 	private static final String[] GENERATED_PATHS = {RELEASE_NOTES_PATH};
 	Extension settings;
-	private Project project;
-	private boolean initialised;
 
 	private static String packageIfExists(@Nullable String in) {
 		return in == null || in.isEmpty() ? "." + in : "";
@@ -60,17 +55,14 @@ public class DefaultsPlugin implements Plugin<Project> {
 	@SneakyThrows
 	@Override
 	public void apply(@NotNull Project project) {
-		this.project = project;
-		project.getExtensions().add("minimallyCorrectDefaults", settings = new Extension());
+		project.getExtensions().add("minimallyCorrectDefaults", settings = new Extension(project));
 		project.afterEvaluate(this::afterEvaluate);
 	}
 
+	@SneakyThrows
 	private void afterEvaluate(Project project) {
 		if (project.getState().getFailure() != null)
 			return;
-
-		if (!initialised)
-			throw new RuntimeException("Should have called `minimallyCorrectDefaults()`");
 
 		project.getTasks().withType(Jar.class).all(jar -> {
 			jar.setDuplicatesStrategy(DuplicatesStrategy.WARN);
@@ -91,7 +83,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 				attributes.put("Minecraft-Version", settings.minecraft);
 		});
 
-		for (JavaCompile it : project.getTasks().withType(JavaCompile.class)) {
+		project.getTasks().withType(JavaCompile.class).all(it -> {
 			val options = it.getOptions();
 			options.setEncoding("UTF-8");
 
@@ -111,27 +103,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 				if (settings.treatWarningsAsErrors)
 					options.getCompilerArgs().add("-Werror");
 			}
-		}
-	}
-
-	String getGithubRepo() {
-		String vcsUrl = getVcsUrl();
-		int lastIndexOfSlash = vcsUrl.lastIndexOf('/');
-		int secondLast = vcsUrl.lastIndexOf('/', lastIndexOfSlash - 1);
-		if (secondLast == -1)
-			secondLast = vcsUrl.lastIndexOf(':', lastIndexOfSlash - 1);
-		return vcsUrl.substring(secondLast + 1, vcsUrl.lastIndexOf('.'));
-	}
-
-	@SneakyThrows
-	String getVcsUrl() {
-		return "git@github.com:" + settings.organisation + '/' + project.getRootProject().getName() + ".git";
-	}
-
-	@SneakyThrows
-	private void configure() {
-		initialised = true;
-		Project project = this.project;
+		});
 
 		project.getRepositories().jcenter();
 		project.getRepositories().maven(it -> it.setUrl("https://repo.nallar.me/"));
@@ -150,10 +122,10 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 
 		if (settings.artifacts) {
-			addArtifact("sources", sourceSets.getByName("main").getAllSource());
-			addArtifact("javadoc", ((Javadoc) project.getTasks().getByName("javadoc")).getOutputs());
+			addArtifact(project, "sources", sourceSets.getByName("main").getAllSource());
+			addArtifact(project, "javadoc", ((Javadoc) project.getTasks().getByName("javadoc")).getOutputs());
 			if (settings.minecraft != null)
-				addArtifact("deobf", sourceSets.getByName("main").getOutput());
+				addArtifact(project, "deobf", sourceSets.getByName("main").getOutput());
 		}
 
 		if (settings.spotBugs) {
@@ -220,8 +192,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 			}
 			if (settings.freshmark) {
 				spotless.freshmark(it -> {
-					it.properties(props -> props.putAll(settings.toProperties()));
-					it.target(files("**/*.md"));
+					it.properties(props -> props.putAll(settings.toProperties(project)));
+					it.target(files(project, "**/*.md"));
 					it.indentWithTabs();
 					it.endWithNewline();
 				});
@@ -242,7 +214,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 				});
 			}
 			spotless.format("misc", it -> {
-				it.target(files("/.gitignore", "/.gitattributes", "**/*.sh"));
+				it.target(files(project, "/.gitignore", "/.gitattributes", "**/*.sh"));
 				it.indentWithTabs();
 				it.trimTrailingWhitespace();
 				it.endWithNewline();
@@ -300,12 +272,26 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 	}
 
+	String getGithubRepo() {
+		String vcsUrl = getVcsUrl();
+		int lastIndexOfSlash = vcsUrl.lastIndexOf('/');
+		int secondLast = vcsUrl.lastIndexOf('/', lastIndexOfSlash - 1);
+		if (secondLast == -1)
+			secondLast = vcsUrl.lastIndexOf(':', lastIndexOfSlash - 1);
+		return vcsUrl.substring(secondLast + 1, vcsUrl.lastIndexOf('.'));
+	}
+
+	@SneakyThrows
+	String getVcsUrl() {
+		return "git@github.com:" + settings.organisation + '/' + settings.repository + ".git";
+	}
+
 	@NotNull
 	private File getSpotlessFormatFile(Project project) {
 		return new File(project.getBuildDir(), "spotless/eclipse-config.xml");
 	}
 
-	private FileTree files(String... globs) {
+	private FileTree files(Project project, String... globs) {
 		val args = new HashMap<String, Object>();
 		args.put("dir", project.getRootDir());
 		args.put("includes", Arrays.asList(globs));
@@ -319,7 +305,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		return (settings.websiteUrl = "https://github.com/" + getGithubRepo());
 	}
 
-	private void addArtifact(String name, Object... files) {
+	private void addArtifact(Project project, String name, Object... files) {
 		if (project.getTasks().findByName(name + "Jar") != null)
 			return;
 
@@ -329,23 +315,25 @@ public class DefaultsPlugin implements Plugin<Project> {
 		project.getArtifacts().add("archives", task);
 	}
 
-	boolean shouldApplyShipKit() {
+	boolean shouldApplyShipKit(Project project) {
 		return settings.shipkit &&
 			project.getRootProject() == project &&
 			(project.hasProperty("applyShipkit") ||
-				isTaskRequested("testRelease") ||
-				isTaskRequested("releaseNeeded") ||
-				isTaskRequested("initShipkit") ||
-				isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE) ||
+				isTaskRequested(project, "testRelease") ||
+				isTaskRequested(project, "releaseNeeded") ||
+				isTaskRequested(project, "initShipkit") ||
+				isTaskRequested(project, UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE) ||
 				Objects.equals(System.getenv("TRAVIS"), "true"));
 	}
 
-	boolean isTaskRequested(String taskName) {
+	boolean isTaskRequested(Project project, String taskName) {
 		return project.getGradle().getStartParameter().getTaskNames().equals(Collections.singletonList(taskName));
 	}
 
-	@Data
-	public class Extension implements Callable<Void> {
+	@Getter
+	@Setter
+	@ToString
+	public class Extension {
 		public final List<String> repos = new ArrayList<>(Arrays.asList(
 			"https://repo.nallar.me/"));
 		public final List<String> annotationDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
@@ -383,19 +371,19 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public String description;
 		public String organisation = "MinimallyCorrect";
 		public String bintrayRepo = (organisation + "/minimallycorrectmaven").toLowerCase();
-		public boolean freshmark = project.hasProperty("applyFreshmark") || isTaskRequested("performRelease");
+		public String repository;
+		public boolean freshmark;
 		public boolean ktLint = true;
 		public boolean ignoreSunInternalWarnings = false;
 		public boolean treatWarningsAsErrors = true;
 		public boolean noDocLint = true;
 
-		@Override
-		public Void call() {
-			DefaultsPlugin.this.configure();
-			return null;
+		Extension(Project project) {
+			repository = project.getRootProject().getName();
+			freshmark = project.hasProperty("applyFreshmark") || isTaskRequested(project, "performRelease");
 		}
 
-		Map<String, Object> toProperties() {
+		Map<String, Object> toProperties(Project project) {
 			val props = new HashMap<String, Object>();
 			props.put("organisation", organisation);
 			props.put("bintrayrepo", bintrayRepo);
