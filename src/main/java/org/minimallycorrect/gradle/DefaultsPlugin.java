@@ -125,7 +125,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 	@SneakyThrows
 	String getVcsUrl() {
-		return "git://git@github.com:" + settings.organisation + '/' + project.getRootProject().getName() + ".git";
+		return "git@github.com:" + settings.organisation + '/' + project.getRootProject().getName() + ".git";
 	}
 
 	@SneakyThrows
