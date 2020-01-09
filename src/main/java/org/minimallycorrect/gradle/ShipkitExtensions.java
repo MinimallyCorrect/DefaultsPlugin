@@ -10,7 +10,6 @@ import lombok.val;
 
 import org.gradle.api.Project;
 import org.shipkit.gradle.configuration.ShipkitConfiguration;
-import org.shipkit.gradle.notes.UpdateReleaseNotesTask;
 import org.shipkit.internal.gradle.java.ShipkitJavaPlugin;
 import org.shipkit.internal.gradle.versionupgrade.CiUpgradeDownstreamPlugin;
 import org.shipkit.internal.gradle.versionupgrade.UpgradeDependencyPlugin;
@@ -84,10 +83,6 @@ public class ShipkitExtensions {
 
 			if (defaultsPlugin.isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE)) {
 				project.getPlugins().apply(UpgradeDependencyPlugin.class);
-			}
-
-			if (defaultsPlugin.settings.spotless) {
-				project.getTasks().withType(UpdateReleaseNotesTask.class).all(it -> it.dependsOn("spotlessFreshmarkApply"));
 			}
 		} else if (defaultsPlugin.settings.shipkit && project.getRootProject() == project && project.getVersion().equals("unspecified")) {
 			val vi = Version.versionInfo(project.file("version.properties"), false);
