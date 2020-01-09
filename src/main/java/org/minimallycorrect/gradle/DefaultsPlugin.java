@@ -7,24 +7,14 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
 
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.val;
 
-import org.gradle.api.Action;
-import org.gradle.api.Plugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
+import org.gradle.api.*;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -37,18 +27,13 @@ import org.gradle.language.jvm.tasks.ProcessResources;
 import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.testing.jacoco.tasks.JacocoReport;
 import org.jetbrains.annotations.NotNull;
-import org.shipkit.gradle.configuration.ShipkitConfiguration;
-import org.shipkit.internal.gradle.java.ShipkitJavaPlugin;
-import org.shipkit.internal.gradle.versionupgrade.CiUpgradeDownstreamPlugin;
+import org.jetbrains.annotations.Nullable;
+import org.shipkit.gradle.notes.UpdateReleaseNotesTask;
 import org.shipkit.internal.gradle.versionupgrade.UpgradeDependencyPlugin;
-import org.shipkit.internal.gradle.versionupgrade.UpgradeDownstreamExtension;
-import org.shipkit.internal.version.Version;
 
 import com.diffplug.gradle.spotless.JavaExtension;
 import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.diffplug.gradle.spotless.SpotlessPlugin;
-import com.jfrog.bintray.gradle.BintrayExtension;
-import com.jfrog.bintray.gradle.BintrayPlugin;
 
 import net.minecraftforge.gradle.user.UserBaseExtension;
 import net.minecraftforge.gradle.user.patcherUser.forge.ForgePlugin;
@@ -59,11 +44,11 @@ public class DefaultsPlugin implements Plugin<Project> {
 	static final Charset CHARSET = StandardCharsets.UTF_8;
 	protected static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
 	private static final String[] GENERATED_PATHS = {RELEASE_NOTES_PATH};
-	private Extension settings;
+	Extension settings;
 	private Project project;
 	private boolean initialised;
 
-	private static String packageIfExists(String in) {
+	private static String packageIfExists(@Nullable String in) {
 		return in == null || in.isEmpty() ? "." + in : "";
 	}
 
@@ -87,7 +72,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		if (!initialised)
 			throw new RuntimeException("Should have called `minimallyCorrectDefaults()`");
 
-		for (Jar jar : project.getTasks().withType(Jar.class)) {
+		project.getTasks().withType(Jar.class).all(jar -> {
 			jar.setDuplicatesStrategy(DuplicatesStrategy.WARN);
 
 			val attributes = jar.getManifest().getAttributes();
@@ -104,7 +89,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 			if (settings.minecraft != null)
 				attributes.put("Minecraft-Version", settings.minecraft);
-		}
+		});
 
 		for (JavaCompile it : project.getTasks().withType(JavaCompile.class)) {
 			val options = it.getOptions();
@@ -129,7 +114,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 	}
 
-	private String getGithubRepo() {
+	String getGithubRepo() {
 		String vcsUrl = getVcsUrl();
 		int lastIndexOfSlash = vcsUrl.lastIndexOf('/');
 		int secondLast = vcsUrl.lastIndexOf('/', lastIndexOfSlash - 1);
@@ -139,7 +124,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	}
 
 	@SneakyThrows
-	private String getVcsUrl() {
+	String getVcsUrl() {
 		return "git://git@github.com:" + settings.organisation + '/' + project.getRootProject().getName() + ".git";
 	}
 
@@ -153,80 +138,13 @@ public class DefaultsPlugin implements Plugin<Project> {
 		val javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
 		val sourceSets = javaPluginConvention.getSourceSets();
 
-		val shouldApplyShipKit = shouldApplyShipKit();
-		if (shouldApplyShipKit) {
-			val shipkitGradle = project.file("gradle/shipkit.gradle");
-			if (!shipkitGradle.exists()) {
-				if (!shipkitGradle.getParentFile().isDirectory() && !shipkitGradle.getParentFile().mkdirs())
-					throw new IOException("Failed to create directory for " + shipkitGradle);
-				try (val is = getClass().getResourceAsStream("/shipkit/shipkit.gradle")) {
-					Files.copy(is, shipkitGradle.toPath());
-				}
-			}
-			val githubRepo = getGithubRepo();
-			project.getExtensions().add("minimallyCorrectDefaultsShipkit", (Callable<Void>) () -> {
-				val configuration = project.getExtensions().getByType(ShipkitConfiguration.class);
-				configuration.getGitHub().setRepository(githubRepo);
-				configuration.getGitHub().setReadOnlyAuthToken("bf61e48ac43dbad4d4a63ff664f5f9446adaa9c5");
-				configuration.getGit().setCommitMessagePostfix("[ci skip-release]");
-				configuration.getReleaseNotes().setIgnoreCommitsContaining(Arrays.asList("[ci skip]", "[ci skip-release]"));
-
-				if (settings.minecraft != null) {
-					configuration.getGit().setTagPrefix('v' + settings.minecraft + '_');
-					configuration.getGit().setReleasableBranchRegex('^' + Pattern.quote(settings.minecraft) + "(/|$)");
-				}
-
-				return null;
-			});
-			project.getPlugins().apply(ShipkitJavaPlugin.class);
-
-			if (settings.minecraft != null)
-				project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
-
-			project.getPlugins().apply(BintrayPlugin.class);
-
-			val bintray = project.getExtensions().getByType(BintrayExtension.class);
-			bintray.setUser("nallar");
-			bintray.setKey(System.getenv("BINTRAY_KEY"));
-			val pkg = bintray.getPkg();
-			pkg.setName(project.getName());
-			pkg.setRepo("minimallycorrectmaven");
-			pkg.setUserOrg("minimallycorrect");
-			pkg.setVcsUrl(getVcsUrl());
-			pkg.setGithubReleaseNotesFile(RELEASE_NOTES_PATH);
-			pkg.setWebsiteUrl(getWebsiteUrl());
-			if (settings.licenses == null)
-				throw new IllegalArgumentException("Must set settings.licenses when shipkit is enabled");
-			pkg.setLicenses(settings.licenses);
-			if (settings.labels == null)
-				throw new IllegalArgumentException("Must set labels when shipkit is enabled");
-			pkg.setLabels(settings.labels);
-			if (settings.description == null)
-				throw new IllegalArgumentException("Must set description when shipkit is enabled");
-			pkg.setDesc(settings.description);
-			pkg.setGithubRepo(githubRepo);
-			pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
-
-			if (settings.downstreamRepositories.size() != 0) {
-				project.getPlugins().apply(CiUpgradeDownstreamPlugin.class);
-				project.getExtensions().getByType(UpgradeDownstreamExtension.class).setRepositories(settings.downstreamRepositories);
-			}
-
-			if (isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE))
-				project.getPlugins().apply(UpgradeDependencyPlugin.class);
-		} else if (settings.shipkit && project.getRootProject() == project && project.getVersion().equals("unspecified")) {
-			val vi = Version.versionInfo(project.file("version.properties"), false);
-			final String version = vi.getVersion() + "-SNAPSHOT";
-			project.allprojects(project1 -> project1.setVersion(version));
-		}
+		ShipkitExtensions.initShipkit(this, project);
 
 		if (settings.noDocLint) {
-			project.getTasks().all((it) -> {
-				if (it instanceof Javadoc) {
-					val options = ((Javadoc) it).getOptions();
-					if (options instanceof CoreJavadocOptions) {
-						((CoreJavadocOptions) options).addStringOption("Xdoclint:none", "-quiet");
-					}
+			project.getTasks().withType(Javadoc.class).all(it -> {
+				val options = it.getOptions();
+				if (options instanceof CoreJavadocOptions) {
+					((CoreJavadocOptions) options).addStringOption("Xdoclint:none", "-quiet");
 				}
 			});
 		}
@@ -307,6 +225,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 					it.indentWithTabs();
 					it.endWithNewline();
 				});
+				project.getTasks().withType(UpdateReleaseNotesTask.class).all(it -> it.dependsOn("spotlessFreshmarkApply"));
 			}
 			if (settings.ktLint) {
 				boolean[] appliedKotlin = new boolean[]{false};
@@ -363,7 +282,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 			val apiKey = System.getenv("CURSEFORGE_API_KEY");
 			if (settings.curseforgeProject != null && apiKey != null) {
-				CurseExtensions.applyCursePlugin(settings, project, shouldApplyShipKit, apiKey);
+				CurseExtensions.applyCursePlugin(settings, project, apiKey);
 			}
 		}
 
@@ -394,7 +313,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		return project.fileTree(args);
 	}
 
-	private String getWebsiteUrl() {
+	String getWebsiteUrl() {
 		if (settings.websiteUrl != null)
 			return settings.websiteUrl;
 		return (settings.websiteUrl = "https://github.com/" + getGithubRepo());
@@ -410,15 +329,18 @@ public class DefaultsPlugin implements Plugin<Project> {
 		project.getArtifacts().add("archives", task);
 	}
 
-	private boolean shouldApplyShipKit() {
-		return settings.shipkit && (project.hasProperty("applyShipkit") ||
-			isTaskRequested("testRelease") ||
-			isTaskRequested("initShipkit") ||
-			isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE) ||
-			Objects.equals(System.getenv("TRAVIS"), "true"));
+	boolean shouldApplyShipKit() {
+		return settings.shipkit &&
+			project.getRootProject() == project &&
+			(project.hasProperty("applyShipkit") ||
+				isTaskRequested("testRelease") ||
+				isTaskRequested("releaseNeeded") ||
+				isTaskRequested("initShipkit") ||
+				isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE) ||
+				Objects.equals(System.getenv("TRAVIS"), "true"));
 	}
 
-	private boolean isTaskRequested(String taskName) {
+	boolean isTaskRequested(String taskName) {
 		return project.getGradle().getStartParameter().getTaskNames().equals(Collections.singletonList(taskName));
 	}
 
@@ -426,14 +348,14 @@ public class DefaultsPlugin implements Plugin<Project> {
 	public class Extension implements Callable<Void> {
 		public final List<String> repos = new ArrayList<>(Arrays.asList(
 			"https://repo.nallar.me/"));
-		public final List<String> annotationDependencyTargets = new ArrayList<>(Arrays.asList("annotationProcessor", "testAnnotationProcessor"));
+		public final List<String> annotationDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
 		public final List<String> annotationProcessorDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly", "annotationProcessor", "testAnnotationProcessor"));
 		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Collections.singletonList(
 			"org.jetbrains:annotations:18.0.0"));
 		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Collections.singletonList(
 			"org.projectlombok:lombok:1.18.10"));
 		public final List<String> downstreamRepositories = new ArrayList<>();
-		public String languageLevel = "8";
+		public String languageLevel = JavaVersion.VERSION_1_8.toString();
 		public boolean javaWarnings = true;
 		public String minecraft = null;
 		public String minecraftMappings = null;
