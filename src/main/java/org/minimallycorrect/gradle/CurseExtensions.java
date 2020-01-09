@@ -7,6 +7,8 @@ import lombok.val;
 
 import org.gradle.api.Project;
 
+import com.google.common.io.Files;
+import com.jfrog.bintray.gradle.tasks.BintrayUploadTask;
 import com.matthewprenger.cursegradle.CurseExtension;
 import com.matthewprenger.cursegradle.CurseGradlePlugin;
 import com.matthewprenger.cursegradle.CurseProject;
@@ -23,7 +25,7 @@ public class CurseExtensions {
 	}
 
 	@SuppressWarnings("unchecked")
-	static void applyCursePlugin(DefaultsPlugin.Extension settings, Project project, boolean shouldApplyShipKit, String apiKey) {
+	static void applyCursePlugin(DefaultsPlugin.Extension settings, Project project, String apiKey) {
 		project.getPlugins().apply(CurseGradlePlugin.class);
 		val extension = project.getExtensions().getByType(CurseExtension.class);
 		extension.setApiKey(apiKey);
@@ -39,22 +41,11 @@ public class CurseExtensions {
 		maybeAddArtifact(project, "javadocJar", curseProject);
 		extension.getCurseProjects().add(curseProject);
 
-		if (shouldApplyShipKit) {
-			project.getTasks().getByName("bintrayUpload").dependsOn(project.getTasks().getByName("reobfJar"));
-			val releaseNotes = project.getTasks().getByName("updateReleaseNotes");
-			project.getTasks().withType(CurseUploadTask.class).forEach(it -> it.dependsOn(releaseNotes));
-			if (settings.spotless) {
-				val freshmarkApplyTask = project.getTasks().findByName("spotlessFreshmarkApply");
-				if (freshmarkApplyTask != null)
-					releaseNotes.dependsOn(freshmarkApplyTask);
+		project.getTasks().withType(BintrayUploadTask.class).all(it -> it.dependsOn("reobfJar"));
 
-				project.getTasks().whenObjectAdded(it -> {
-					if (it.getName().equals("spotlessFreshmarkApply"))
-						releaseNotes.dependsOn(it);
-				});
-			}
-			project.getTasks().getByName("performRelease").dependsOn(project.getTasks().getByName("curseforge"));
-		}
+		project.getTasks().withType(CurseUploadTask.class).all(it -> it.dependsOn("updateReleaseNotes"));
+
+		project.getTasks().matching(it -> it.getName().equals("performRelease")).all(it -> it.dependsOn("curseforge"));
 	}
 
 	private static class FileReader {
@@ -71,7 +62,7 @@ public class CurseExtensions {
 			if (cached != null)
 				return cached;
 			try {
-				cached = com.google.common.io.Files.asCharSource(project.file(DefaultsPlugin.RELEASE_NOTES_PATH), DefaultsPlugin.CHARSET).read();
+				cached = Files.asCharSource(project.file(DefaultsPlugin.RELEASE_NOTES_PATH), DefaultsPlugin.CHARSET).read();
 			} catch (IOException e) {
 				cached = "Failed to read changelog from " + project.file(DefaultsPlugin.RELEASE_NOTES_PATH);
 				project.getLogger().error(cached, e);
