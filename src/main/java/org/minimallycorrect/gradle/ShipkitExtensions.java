@@ -21,7 +21,7 @@ import com.jfrog.bintray.gradle.BintrayPlugin;
 
 public class ShipkitExtensions {
 	static void initShipkit(DefaultsPlugin defaultsPlugin, Project project) throws IOException {
-		val shouldApplyShipKit = defaultsPlugin.shouldApplyShipKit();
+		val shouldApplyShipKit = defaultsPlugin.shouldApplyShipKit(project);
 		if (shouldApplyShipKit) {
 			val shipkitGradle = project.file("gradle/shipkit.gradle");
 			if (!shipkitGradle.exists()) {
@@ -81,7 +81,7 @@ public class ShipkitExtensions {
 				project.getExtensions().getByType(UpgradeDownstreamExtension.class).setRepositories(defaultsPlugin.settings.downstreamRepositories);
 			}
 
-			if (defaultsPlugin.isTaskRequested(UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE)) {
+			if (defaultsPlugin.isTaskRequested(project, UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE)) {
 				project.getPlugins().apply(UpgradeDependencyPlugin.class);
 			}
 		} else if (defaultsPlugin.settings.shipkit && project.getRootProject() == project && project.getVersion().equals("unspecified")) {
