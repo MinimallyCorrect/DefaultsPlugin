@@ -106,7 +106,19 @@ public class DefaultsPlugin implements Plugin<Project> {
 		});
 
 		project.getRepositories().jcenter();
-		project.getRepositories().maven(it -> it.setUrl("https://repo.nallar.me/"));
+		project.getRepositories().maven(it -> {
+			it.setName("repo.nallar.me maven");
+			it.setUrl("https://repo.nallar.me/");
+			try {
+				it.content(c -> {
+					c.includeGroupByRegex("me\\.nallar.*");
+					c.includeGroupByRegex("org\\.minimallycorrect.*");
+				});
+			} catch (NoSuchMethodError ignored) {
+				// gradle < 5.1
+			}
+		});
+
 		val javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
 		val sourceSets = javaPluginConvention.getSourceSets();
 
@@ -339,8 +351,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 	@Setter
 	@ToString
 	public class Extension {
-		public final List<String> repos = new ArrayList<>(Arrays.asList(
-			"https://repo.nallar.me/"));
 		public final List<String> annotationDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
 		public final List<String> annotationProcessorDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly", "annotationProcessor", "testAnnotationProcessor"));
 		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Collections.singletonList(
