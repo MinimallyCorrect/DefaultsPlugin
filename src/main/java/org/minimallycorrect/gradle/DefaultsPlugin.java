@@ -221,7 +221,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			});
 		}
 
-		if (settings.jacoco) {
+		if (settings.jacoco && (isCi() || isTaskRequested(project, "jacocoTestReport"))) {
 			project.getPlugins().apply(JacocoPlugin.class);
 			for (JacocoReport reportTask : project.getTasks().withType(JacocoReport.class)) {
 				reportTask.getReports().forEach(it -> it.setEnabled(true));
@@ -323,7 +323,12 @@ public class DefaultsPlugin implements Plugin<Project> {
 				isTaskRequested(project, "releaseNeeded") ||
 				isTaskRequested(project, "initShipkit") ||
 				isTaskRequested(project, UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE) ||
-				Objects.equals(System.getenv("TRAVIS"), "true"));
+				isCi());
+	}
+
+	private boolean isCi() {
+		return Objects.equals(System.getenv("TRAVIS"), "true") ||
+			Objects.equals(System.getenv("CI"), "true");
 	}
 
 	boolean isTaskRequested(Project project, String taskName) {
