@@ -1,6 +1,6 @@
 buildscript {
 	repositories { jcenter() }
-	dependencies { classpath 'org.minimallycorrect.gradle:DefaultsPlugin:0.0.46' }
+	dependencies { classpath 'org.minimallycorrect.gradle:DefaultsPlugin:0.0.41' }
 }
 plugins {
 	id "java-gradle-plugin"
@@ -14,7 +14,7 @@ group="org.minimallycorrect.gradle"
 minimallyCorrectDefaults {
 	description = "Sets up sensible defaults for our gradle projects to avoid boilerplate"
 	labels = ["gradle", "gradle-plugin"]
-}
+} ()
 
 repositories {
 	jcenter()

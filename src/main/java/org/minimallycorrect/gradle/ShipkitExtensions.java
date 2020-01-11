@@ -20,18 +20,18 @@ import com.jfrog.bintray.gradle.BintrayExtension;
 import com.jfrog.bintray.gradle.BintrayPlugin;
 
 public class ShipkitExtensions {
-	static void initShipkit(DefaultsPlugin defaultsPlugin, Project project) throws IOException {
-		val shouldApplyShipKit = defaultsPlugin.shouldApplyShipKit(project);
+	static void initShipkit(DefaultsPlugin.Extension settings, Project project) throws IOException {
+		val shouldApplyShipKit = DefaultsPlugin.shouldApplyShipKit(settings, project);
 		if (shouldApplyShipKit) {
 			val shipkitGradle = project.file("gradle/shipkit.gradle");
 			if (!shipkitGradle.exists()) {
 				if (!shipkitGradle.getParentFile().isDirectory() && !shipkitGradle.getParentFile().mkdirs())
 					throw new IOException("Failed to create directory for " + shipkitGradle);
-				try (val is = defaultsPlugin.getClass().getResourceAsStream("/shipkit/shipkit.gradle")) {
+				try (val is = ShipkitExtensions.class.getResourceAsStream("/shipkit/shipkit.gradle")) {
 					Files.copy(is, shipkitGradle.toPath());
 				}
 			}
-			val githubRepo = defaultsPlugin.getGithubRepo();
+			val githubRepo = DefaultsPlugin.getGithubRepo(settings);
 			project.getExtensions().add("minimallyCorrectDefaultsShipkit", (Callable<Void>) () -> {
 				val configuration = project.getExtensions().getByType(ShipkitConfiguration.class);
 				configuration.getGitHub().setRepository(githubRepo);
@@ -39,17 +39,17 @@ public class ShipkitExtensions {
 				configuration.getGit().setCommitMessagePostfix("[ci skip-release]");
 				configuration.getReleaseNotes().setIgnoreCommitsContaining(Arrays.asList("[ci skip]", "[ci skip-release]"));
 
-				if (defaultsPlugin.settings.minecraft != null) {
-					configuration.getGit().setTagPrefix('v' + defaultsPlugin.settings.minecraft + '_');
-					configuration.getGit().setReleasableBranchRegex('^' + Pattern.quote(defaultsPlugin.settings.minecraft) + "(/|$)");
+				if (settings.minecraft != null) {
+					configuration.getGit().setTagPrefix('v' + settings.minecraft + '_');
+					configuration.getGit().setReleasableBranchRegex('^' + Pattern.quote(settings.minecraft) + "(/|$)");
 				}
 
 				return null;
 			});
 			project.getPlugins().apply(ShipkitJavaPlugin.class);
 
-			if (defaultsPlugin.settings.minecraft != null)
-				project.setVersion(defaultsPlugin.settings.minecraft + '-' + project.getVersion().toString());
+			if (settings.minecraft != null)
+				project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
 
 			project.allprojects(it -> {
 				it.getPlugins().apply(BintrayPlugin.class);
@@ -60,31 +60,31 @@ public class ShipkitExtensions {
 				pkg.setName(project.getName());
 				pkg.setRepo("minimallycorrectmaven");
 				pkg.setUserOrg("minimallycorrect");
-				pkg.setVcsUrl(defaultsPlugin.getVcsUrl());
+				pkg.setVcsUrl(DefaultsPlugin.getVcsUrl(settings));
 				pkg.setGithubReleaseNotesFile(DefaultsPlugin.RELEASE_NOTES_PATH);
-				pkg.setWebsiteUrl(defaultsPlugin.getWebsiteUrl());
-				if (defaultsPlugin.settings.licenses == null)
+				pkg.setWebsiteUrl(DefaultsPlugin.getWebsiteUrl(settings));
+				if (settings.licenses == null)
 					throw new IllegalArgumentException("Must set settings.licenses when shipkit is enabled");
-				pkg.setLicenses(defaultsPlugin.settings.licenses);
-				if (defaultsPlugin.settings.labels == null)
+				pkg.setLicenses(settings.licenses);
+				if (settings.labels == null)
 					throw new IllegalArgumentException("Must set labels when shipkit is enabled");
-				pkg.setLabels(defaultsPlugin.settings.labels);
-				if (defaultsPlugin.settings.description == null)
+				pkg.setLabels(settings.labels);
+				if (settings.description == null)
 					throw new IllegalArgumentException("Must set description when shipkit is enabled");
-				pkg.setDesc(defaultsPlugin.settings.description);
+				pkg.setDesc(settings.description);
 				pkg.setGithubRepo(githubRepo);
 				pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
 			});
 
-			if (defaultsPlugin.settings.downstreamRepositories.size() != 0) {
+			if (settings.downstreamRepositories.size() != 0) {
 				project.getPlugins().apply(CiUpgradeDownstreamPlugin.class);
-				project.getExtensions().getByType(UpgradeDownstreamExtension.class).setRepositories(defaultsPlugin.settings.downstreamRepositories);
+				project.getExtensions().getByType(UpgradeDownstreamExtension.class).setRepositories(settings.downstreamRepositories);
 			}
 
-			if (defaultsPlugin.isTaskRequested(project, UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE)) {
+			if (DefaultsPlugin.isTaskRequested(project, UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE)) {
 				project.getPlugins().apply(UpgradeDependencyPlugin.class);
 			}
-		} else if (defaultsPlugin.settings.shipkit && project.getRootProject() == project && project.getVersion().equals("unspecified")) {
+		} else if (settings.shipkit && project.getRootProject() == project && project.getVersion().equals("unspecified")) {
 			val vi = Version.versionInfo(project.file("version.properties"), false);
 			final String version = vi.getVersion() + "-SNAPSHOT";
 			project.allprojects(project1 -> project1.setVersion(version));

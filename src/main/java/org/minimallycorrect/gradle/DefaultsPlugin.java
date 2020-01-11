@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.function.Function;
 
 import lombok.*;
 
@@ -56,11 +57,18 @@ public class DefaultsPlugin implements Plugin<Project> {
 	@Override
 	public void apply(@NotNull Project project) {
 		project.getExtensions().add("minimallyCorrectDefaults", settings = new Extension(project));
-		project.afterEvaluate(this::afterEvaluate);
+		project.afterEvaluate(it -> {
+			if (it.getState().getFailure() != null)
+				return;
+
+			if (!settings.hasRan) {
+				throw new IllegalStateException("The minimallyCorrectDefaults extension should be called before project evaluation");
+			}
+		});
 	}
 
 	@SneakyThrows
-	private void afterEvaluate(Project project) {
+	private static void configure(final Extension settings, Project project) {
 		if (project.getState().getFailure() != null)
 			return;
 
@@ -122,7 +130,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		val javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
 		val sourceSets = javaPluginConvention.getSourceSets();
 
-		ShipkitExtensions.initShipkit(this, project);
+		ShipkitExtensions.initShipkit(settings, project);
 
 		if (settings.noDocLint) {
 			project.getTasks().withType(Javadoc.class).all(it -> {
@@ -184,7 +192,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 						it.doFirst(new Action<Task>() {
 							@Override
 							public void execute(@NotNull Task ignored) {
-								val resource = DefaultsPlugin.this.getClass().getResource("/spotless/eclipse-config.xml");
+								val resource = DefaultsPlugin.class.getResource("/spotless/eclipse-config.xml");
 								try {
 									if (!formatFile.exists() || resource.openConnection().getContentLength() != formatFile.length())
 										try (val is = resource.openStream()) {
@@ -284,8 +292,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 	}
 
-	String getGithubRepo() {
-		String vcsUrl = getVcsUrl();
+	static String getGithubRepo(Extension settings) {
+		String vcsUrl = getVcsUrl(settings);
 		int lastIndexOfSlash = vcsUrl.lastIndexOf('/');
 		int secondLast = vcsUrl.lastIndexOf('/', lastIndexOfSlash - 1);
 		if (secondLast == -1)
@@ -294,16 +302,16 @@ public class DefaultsPlugin implements Plugin<Project> {
 	}
 
 	@SneakyThrows
-	String getVcsUrl() {
+	static String getVcsUrl(Extension settings) {
 		return "git@github.com:" + settings.organisation + '/' + settings.repository + ".git";
 	}
 
 	@NotNull
-	private File getSpotlessFormatFile(Project project) {
+	private static File getSpotlessFormatFile(Project project) {
 		return new File(project.getBuildDir(), "spotless/eclipse-config.xml");
 	}
 
-	private FileTree files(Project project, String... globs) {
+	private static FileTree files(Project project, String... globs) {
 		val args = new HashMap<String, Object>();
 		args.put("dir", project.getRootDir());
 		args.put("includes", Arrays.asList(globs));
@@ -311,13 +319,13 @@ public class DefaultsPlugin implements Plugin<Project> {
 		return project.fileTree(args);
 	}
 
-	String getWebsiteUrl() {
+	static String getWebsiteUrl(Extension settings) {
 		if (settings.websiteUrl != null)
 			return settings.websiteUrl;
-		return (settings.websiteUrl = "https://github.com/" + getGithubRepo());
+		return (settings.websiteUrl = "https://github.com/" + getGithubRepo(settings));
 	}
 
-	private void addArtifact(Project project, String name, Object... files) {
+	private static void addArtifact(Project project, String name, Object... files) {
 		if (project.getTasks().findByName(name + "Jar") != null)
 			return;
 
@@ -327,30 +335,30 @@ public class DefaultsPlugin implements Plugin<Project> {
 		project.getArtifacts().add("archives", task);
 	}
 
-	boolean shouldApplyShipKit(Project project) {
+	static boolean shouldApplyShipKit(Extension settings, Project project) {
 		return settings.shipkit &&
 			project.getRootProject() == project &&
 			(project.hasProperty("applyShipkit") ||
-				isTaskRequested(project, "testRelease") ||
-				isTaskRequested(project, "releaseNeeded") ||
-				isTaskRequested(project, "initShipkit") ||
-				isTaskRequested(project, UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE) ||
-				isCi());
+				DefaultsPlugin.isTaskRequested(project, "testRelease") ||
+				DefaultsPlugin.isTaskRequested(project, "releaseNeeded") ||
+				DefaultsPlugin.isTaskRequested(project, "initShipkit") ||
+				DefaultsPlugin.isTaskRequested(project, UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE) ||
+				DefaultsPlugin.isCi());
 	}
 
-	private boolean isCi() {
+	private static boolean isCi() {
 		return Objects.equals(System.getenv("TRAVIS"), "true") ||
 			Objects.equals(System.getenv("CI"), "true");
 	}
 
-	boolean isTaskRequested(Project project, String taskName) {
+	static boolean isTaskRequested(Project project, String taskName) {
 		return project.getGradle().getStartParameter().getTaskNames().equals(Collections.singletonList(taskName));
 	}
 
 	@Getter
 	@Setter
 	@ToString
-	public class Extension {
+	public class Extension implements Function<Project, Void> {
 		public final List<String> annotationDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
 		public final List<String> annotationProcessorDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly", "annotationProcessor", "testAnnotationProcessor"));
 		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Collections.singletonList(
@@ -392,6 +400,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public boolean ignoreSunInternalWarnings = false;
 		public boolean treatWarningsAsErrors = true;
 		public boolean noDocLint = true;
+		private boolean hasRan = false;
 
 		Extension(Project project) {
 			repository = project.getRootProject().getName();
@@ -427,6 +436,17 @@ public class DefaultsPlugin implements Plugin<Project> {
 				return minecraftMappings;
 
 			return ForgeExtensions.getMappings(minecraft);
+		}
+
+		@Override
+		public Void apply(Project project) {
+			hasRan = true;
+			DefaultsPlugin.configure(this, project);
+			return null;
+		}
+
+		public void call(Project project) {
+			apply(project);
 		}
 	}
 }
