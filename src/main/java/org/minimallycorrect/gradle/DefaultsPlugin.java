@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
-import java.util.function.Function;
 
 import lombok.*;
 
@@ -358,7 +357,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	@Getter
 	@Setter
 	@ToString
-	public class Extension implements Function<Project, Void> {
+	public static class Extension {
 		public final List<String> annotationDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
 		public final List<String> annotationProcessorDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly", "annotationProcessor", "testAnnotationProcessor"));
 		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Collections.singletonList(
@@ -438,15 +437,9 @@ public class DefaultsPlugin implements Plugin<Project> {
 			return ForgeExtensions.getMappings(minecraft);
 		}
 
-		@Override
-		public Void apply(Project project) {
+		public void configureProject(Project project) {
 			hasRan = true;
 			DefaultsPlugin.configure(this, project);
-			return null;
-		}
-
-		public void call(Project project) {
-			apply(project);
 		}
 	}
 }
