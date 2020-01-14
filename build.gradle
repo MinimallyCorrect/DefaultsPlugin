@@ -35,7 +35,7 @@ dependencies {
 		transitive = false
 	}
 	implementation "com.diffplug.spotless:spotless-plugin-gradle:3.26.1"
-	implementation "org.shipkit:shipkit:2.2.5"
+	implementation "org.shipkit:shipkit:2.2.7"
 }
 
 gradlePlugin {
