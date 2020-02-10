@@ -20,7 +20,7 @@ import com.jfrog.bintray.gradle.BintrayExtension;
 import com.jfrog.bintray.gradle.BintrayPlugin;
 
 public class ShipkitExtensions {
-	static void initShipkit(DefaultsPlugin.Extension settings, Project project) throws IOException {
+	static void initShipkit(DefaultsPluginExtension settings, Project project) throws IOException {
 		val shouldApplyShipKit = DefaultsPlugin.shouldApplyShipKit(settings, project);
 		if (shouldApplyShipKit) {
 			val shipkitGradle = project.file("gradle/shipkit.gradle");

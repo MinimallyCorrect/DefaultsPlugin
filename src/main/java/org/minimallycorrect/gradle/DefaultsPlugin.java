@@ -42,7 +42,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	static final Charset CHARSET = StandardCharsets.UTF_8;
 	protected static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
 	private static final String[] GENERATED_PATHS = {RELEASE_NOTES_PATH};
-	Extension settings;
+	DefaultsPluginExtension settings;
 
 	private static String packageIfExists(@Nullable String in) {
 		return in == null || in.isEmpty() ? "." + in : "";
@@ -56,7 +56,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	@SneakyThrows
 	@Override
 	public void apply(@NotNull Project project) {
-		project.getExtensions().add("minimallyCorrectDefaults", settings = new Extension(project));
+		project.getExtensions().add("minimallyCorrectDefaults", settings = new DefaultsPluginExtension(project));
 		project.afterEvaluate(it -> {
 			if (it.getState().getFailure() != null)
 				return;
@@ -68,7 +68,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	}
 
 	@SneakyThrows
-	private static void configure(final Extension settings, Project project) {
+	static void configure(final DefaultsPluginExtension settings, Project project) {
 		if (project.getState().getFailure() != null)
 			return;
 
@@ -115,6 +115,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		});
 
 		project.getRepositories().jcenter();
+		// TODO: deprecate this, we use jcenter now
 		project.getRepositories().maven(it -> {
 			it.setName("repo.nallar.me maven");
 			it.setUrl("https://repo.nallar.me/");
@@ -293,7 +294,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 	}
 
-	static String getGithubRepo(Extension settings) {
+	static String getGithubRepo(DefaultsPluginExtension settings) {
 		String vcsUrl = getVcsUrl(settings);
 		int lastIndexOfSlash = vcsUrl.lastIndexOf('/');
 		int secondLast = vcsUrl.lastIndexOf('/', lastIndexOfSlash - 1);
@@ -303,7 +304,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	}
 
 	@SneakyThrows
-	static String getVcsUrl(Extension settings) {
+	static String getVcsUrl(DefaultsPluginExtension settings) {
 		return "git@github.com:" + settings.organisation + '/' + settings.repository + ".git";
 	}
 
@@ -320,7 +321,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		return project.fileTree(args);
 	}
 
-	static String getWebsiteUrl(Extension settings) {
+	static String getWebsiteUrl(DefaultsPluginExtension settings) {
 		if (settings.websiteUrl != null)
 			return settings.websiteUrl;
 		return (settings.websiteUrl = "https://github.com/" + getGithubRepo(settings));
@@ -336,7 +337,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		project.getArtifacts().add("archives", task);
 	}
 
-	static boolean shouldApplyShipKit(Extension settings, Project project) {
+	static boolean shouldApplyShipKit(DefaultsPluginExtension settings, Project project) {
 		return settings.shipkit &&
 			project.getRootProject() == project &&
 			(project.hasProperty("applyShipkit") ||
@@ -356,93 +357,4 @@ public class DefaultsPlugin implements Plugin<Project> {
 		return project.getGradle().getStartParameter().getTaskNames().equals(Collections.singletonList(taskName));
 	}
 
-	@Getter
-	@Setter
-	@ToString
-	public static class Extension {
-		public final List<String> annotationDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
-		public final List<String> annotationProcessorDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly", "annotationProcessor", "testAnnotationProcessor"));
-		public final List<String> annotationDependencyCoordinates = new ArrayList<>(Collections.singletonList(
-			"org.jetbrains:annotations:18.0.0"));
-		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Collections.singletonList(
-			"org.projectlombok:lombok:1.18.10"));
-		public final List<String> downstreamRepositories = new ArrayList<>();
-		public JavaVersion languageLevel = JavaVersion.VERSION_1_8;
-		public boolean javaWarnings = true;
-		public String minecraft = null;
-		public String minecraftMappings = null;
-		public String forge = null;
-		public String fmlCorePlugin = null;
-		public boolean fmlCorePluginContainsFmlMod = false;
-		public boolean spotBugs = true;
-		public List<String> spotBugsExclusions = Arrays.asList(
-			"DM_CONVERT_CASE",
-			"SE_NO_SERIALVERSIONID",
-			"MS_SHOULD_BE_FINAL",
-			"MS_CANNOT_BE_FINAL",
-			"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE");
-		public boolean spotless = true;
-		public boolean googleJavaFormat = false;
-		public boolean jacoco = true;
-		public boolean shipkit = true;
-		public boolean artifacts = true;
-		public String wrapperJavaArgs = null;
-		public String vcsUrl = null;
-		public String websiteUrl = null;
-		public String curseforgeProject = null;
-		public String[] labels;
-		public String[] licenses = {"MIT"};
-		public String description;
-		public String organisation = "MinimallyCorrect";
-		public String bintrayRepo = (organisation + "/minimallycorrectmaven").toLowerCase();
-		public String repository;
-		public boolean freshmark;
-		public boolean ktLint = true;
-		public boolean ignoreSunInternalWarnings = false;
-		public boolean treatWarningsAsErrors = true;
-		public boolean noDocLint = true;
-		private boolean hasRan = false;
-
-		Extension(Project project) {
-			repository = project.getRootProject().getName();
-			freshmark = project.hasProperty("applyFreshmark") || isTaskRequested(project, "performRelease");
-		}
-
-		Map<String, Object> toProperties(Project project) {
-			val props = new HashMap<String, Object>();
-			props.put("organisation", organisation);
-			props.put("bintrayrepo", bintrayRepo);
-			props.put("name", project.getName());
-			props.put("group", project.getGroup());
-			props.put("version", project.getVersion());
-			if (licenses.length == 1)
-				props.put("license", licenses[0]);
-			props.put("licenses", Arrays.toString(licenses));
-			props.put("releaseNotesPath", RELEASE_NOTES_PATH);
-			props.put("branch", Git.getBranch(project));
-			props.put("discordId", "313371711632441344");
-			props.put("discordInvite", "https://discord.gg/YrV3bDm");
-			return props;
-		}
-
-		String getForge(String minecraft) {
-			if (forge != null)
-				return forge;
-
-			return ForgeExtensions.getForge(minecraft);
-		}
-
-		String getMappings(String minecraft) {
-			if (minecraftMappings != null)
-				return minecraftMappings;
-
-			return ForgeExtensions.getMappings(minecraft);
-		}
-
-		@SuppressWarnings("unused")
-		public void configureProject(Project project) {
-			hasRan = true;
-			DefaultsPlugin.configure(this, project);
-		}
-	}
 }

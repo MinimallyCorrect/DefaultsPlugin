@@ -52,7 +52,7 @@ public class ForgeExtensions {
 		throw new IllegalArgumentException("Unsupported minecraft version " + minecraft);
 	}
 
-	static void configureMinecraft(Project project, DefaultsPlugin.Extension settings, UserBaseExtension minecraft) {
+	static void configureMinecraft(Project project, DefaultsPluginExtension settings, UserBaseExtension minecraft) {
 		String mcVersion = getSupportedVersions(settings.minecraft).get(0);
 		minecraft.setVersion(mcVersion + '-' + settings.getForge(mcVersion));
 		minecraft.setMappings(settings.getMappings(mcVersion));
