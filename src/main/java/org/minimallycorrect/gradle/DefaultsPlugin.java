@@ -15,6 +15,7 @@ import org.gradle.api.*;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.javadoc.Javadoc;
@@ -71,6 +72,12 @@ public class DefaultsPlugin implements Plugin<Project> {
 		if (project.getState().getFailure() != null)
 			return;
 
+		if (settings.languageLevel != null) {
+			val ext = project.getExtensions().getByType(JavaPluginExtension.class);
+			ext.setSourceCompatibility(settings.languageLevel);
+			ext.setTargetCompatibility(settings.languageLevel);
+		}
+
 		project.getTasks().withType(Jar.class).all(jar -> {
 			jar.setDuplicatesStrategy(DuplicatesStrategy.WARN);
 
@@ -93,11 +100,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 		project.getTasks().withType(JavaCompile.class).all(it -> {
 			val options = it.getOptions();
 			options.setEncoding("UTF-8");
-
-			if (settings.languageLevel != null) {
-				it.setSourceCompatibility(settings.languageLevel);
-				it.setTargetCompatibility(settings.languageLevel);
-			}
 
 			if (settings.javaWarnings) {
 				options.setDeprecation(true);
@@ -209,7 +211,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 						});
 				});
 			}
-			if (settings.freshmark) {
+			if (settings.freshmark && project.getRootProject() == project) {
 				spotless.freshmark(it -> {
 					it.properties(props -> props.putAll(settings.toProperties(project)));
 					it.target(files(project, "**/*.md"));
@@ -365,7 +367,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		public final List<String> lombokDependencyCoordinates = new ArrayList<>(Collections.singletonList(
 			"org.projectlombok:lombok:1.18.10"));
 		public final List<String> downstreamRepositories = new ArrayList<>();
-		public String languageLevel = JavaVersion.VERSION_1_8.toString();
+		public JavaVersion languageLevel = JavaVersion.VERSION_1_8;
 		public boolean javaWarnings = true;
 		public String minecraft = null;
 		public String minecraftMappings = null;
@@ -437,6 +439,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			return ForgeExtensions.getMappings(minecraft);
 		}
 
+		@SuppressWarnings("unused")
 		public void configureProject(Project project) {
 			hasRan = true;
 			DefaultsPlugin.configure(this, project);
