@@ -25,7 +25,7 @@ public class CurseExtensions {
 	}
 
 	@SuppressWarnings("unchecked")
-	static void applyCursePlugin(DefaultsPlugin.Extension settings, Project project, String apiKey) {
+	static void applyCursePlugin(DefaultsPluginExtension settings, Project project, String apiKey) {
 		project.getPlugins().apply(CurseGradlePlugin.class);
 		val extension = project.getExtensions().getByType(CurseExtension.class);
 		extension.setApiKey(apiKey);
