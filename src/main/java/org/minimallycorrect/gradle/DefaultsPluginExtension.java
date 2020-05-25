@@ -19,13 +19,6 @@ public class DefaultsPluginExtension {
 	public String forge = null;
 	public String fmlCorePlugin = null;
 	public boolean fmlCorePluginContainsFmlMod = false;
-	public boolean spotBugs = true;
-	public List<String> spotBugsExclusions = Arrays.asList(
-		"DM_CONVERT_CASE",
-		"SE_NO_SERIALVERSIONID",
-		"MS_SHOULD_BE_FINAL",
-		"MS_CANNOT_BE_FINAL",
-		"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE");
 	public boolean spotless = true;
 	public boolean googleJavaFormat = false;
 	public boolean jacoco = true;
