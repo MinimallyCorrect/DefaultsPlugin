@@ -3,8 +3,6 @@ package org.minimallycorrect.gradle;
 import java.io.IOException;
 import java.util.List;
 
-import lombok.val;
-
 import org.gradle.api.Project;
 
 import com.google.common.io.Files;
@@ -16,8 +14,8 @@ import com.matthewprenger.cursegradle.CurseUploadTask;
 
 public class CurseExtensions {
 	static void maybeAddArtifact(Project project, String name, CurseProject curseProject) {
-		val curseforge = project.getTasks().findByName("curseforge");
-		val task = project.getTasks().findByName(name);
+		var curseforge = project.getTasks().findByName("curseforge");
+		var task = project.getTasks().findByName(name);
 		if (curseforge == null || task == null)
 			return;
 		curseforge.dependsOn(task);
@@ -27,9 +25,9 @@ public class CurseExtensions {
 	@SuppressWarnings("unchecked")
 	static void applyCursePlugin(DefaultsPluginExtension settings, Project project, String apiKey) {
 		project.getPlugins().apply(CurseGradlePlugin.class);
-		val extension = project.getExtensions().getByType(CurseExtension.class);
+		var extension = project.getExtensions().getByType(CurseExtension.class);
 		extension.setApiKey(apiKey);
-		val curseProject = new CurseProject();
+		var curseProject = new CurseProject();
 		curseProject.setId(settings.curseforgeProject);
 		curseProject.setApiKey(apiKey);
 		curseProject.setChangelog(new FileReader(project));
