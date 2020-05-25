@@ -7,11 +7,15 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Objects;
 
-import lombok.*;
-
-import org.gradle.api.*;
+import org.gradle.api.Action;
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -48,12 +52,14 @@ public class DefaultsPlugin implements Plugin<Project> {
 		return in == null || in.isEmpty() ? "." + in : "";
 	}
 
-	@SneakyThrows
 	private static void replace(File file, String from, String to) {
-		Files.write(file.toPath(), new String(Files.readAllBytes(file.toPath()), CHARSET).replace(from, to).getBytes(CHARSET));
+		try {
+			Files.write(file.toPath(), new String(Files.readAllBytes(file.toPath()), CHARSET).replace(from, to).getBytes(CHARSET));
+		} catch (IOException e) {
+			throw new IOError(e);
+		}
 	}
 
-	@SneakyThrows
 	@Override
 	public void apply(@NotNull Project project) {
 		project.getExtensions().add("minimallyCorrectDefaults", settings = new DefaultsPluginExtension(project));
@@ -67,13 +73,12 @@ public class DefaultsPlugin implements Plugin<Project> {
 		});
 	}
 
-	@SneakyThrows
 	static void configure(final DefaultsPluginExtension settings, Project project) {
 		if (project.getState().getFailure() != null)
 			return;
 
 		if (settings.languageLevel != null) {
-			val ext = project.getExtensions().getByType(JavaPluginExtension.class);
+			var ext = project.getExtensions().getByType(JavaPluginExtension.class);
 			ext.setSourceCompatibility(settings.languageLevel);
 			ext.setTargetCompatibility(settings.languageLevel);
 		}
@@ -81,7 +86,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		project.getTasks().withType(Jar.class).all(jar -> {
 			jar.setDuplicatesStrategy(DuplicatesStrategy.WARN);
 
-			val attributes = jar.getManifest().getAttributes();
+			var attributes = jar.getManifest().getAttributes();
 
 			if (settings.fmlCorePlugin != null)
 				attributes.put("FMLCorePlugin", settings.fmlCorePlugin);
@@ -98,7 +103,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		});
 
 		project.getTasks().withType(JavaCompile.class).all(it -> {
-			val options = it.getOptions();
+			var options = it.getOptions();
 			options.setEncoding("UTF-8");
 
 			if (settings.javaWarnings) {
@@ -129,14 +134,14 @@ public class DefaultsPlugin implements Plugin<Project> {
 			}
 		});
 
-		val javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
-		val sourceSets = javaPluginConvention.getSourceSets();
+		var javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
+		var sourceSets = javaPluginConvention.getSourceSets();
 
 		ShipkitExtensions.initShipkit(settings, project);
 
 		if (settings.noDocLint) {
 			project.getTasks().withType(Javadoc.class).all(it -> {
-				val options = it.getOptions();
+				var options = it.getOptions();
 				if (options instanceof CoreJavadocOptions) {
 					((CoreJavadocOptions) options).addStringOption("Xdoclint:none", "-quiet");
 				}
@@ -155,9 +160,9 @@ public class DefaultsPlugin implements Plugin<Project> {
 			/*
 			project.getPlugins().apply("com.github.spotbugs");
 			//project.getDependencies().add("spotbugs", "com.github.spotbugs:spotbugs:3.1.0-RC5");
-			val extension = (SpotBugsExtension) project.getExtensions().getByName("spotbugs");
+			var extension = (SpotBugsExtension) project.getExtensions().getByName("spotbugs");
 			extension.setToolVersion("3.1.0-RC5");
-			val javaPluginConvention = project.getConvention().findPlugin(JavaPluginConvention.class);
+			var javaPluginConvention = project.getConvention().findPlugin(JavaPluginConvention.class);
 			extension.setSourceSets(Collections.singleton(javaPluginConvention.getSourceSets().getByName("main")));
 			extension.setIgnoreFailures(false);
 			extension.setReportsDir(project.file("build/findbugs"));
@@ -178,7 +183,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 		if (settings.spotless) {
 			project.getPlugins().apply(SpotlessPlugin.class);
-			val spotless = project.getExtensions().getByType(SpotlessExtension.class);
+			var spotless = project.getExtensions().getByType(SpotlessExtension.class);
 			if (settings.googleJavaFormat) {
 				spotless.java(JavaExtension::googleJavaFormat);
 			} else {
@@ -194,11 +199,11 @@ public class DefaultsPlugin implements Plugin<Project> {
 						it.doFirst(new Action<Task>() {
 							@Override
 							public void execute(@NotNull Task ignored) {
-								val resource = DefaultsPlugin.class.getResource("/spotless/eclipse-config.xml");
+								var resource = DefaultsPlugin.class.getResource("/spotless/eclipse-config.xml");
 								try {
 									if (!formatFile.exists() || resource.openConnection().getContentLength() != formatFile.length())
-										try (val is = resource.openStream()) {
-											val parent = formatFile.getParentFile();
+										try (var is = resource.openStream()) {
+											var parent = formatFile.getParentFile();
 											if (!parent.isDirectory() && !parent.mkdirs())
 												throw new IOError(new IOException("Failed to create " + parent));
 											Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -227,7 +232,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 					if (it.getClass().getCanonicalName().startsWith("org.jetbrains.kotlin")) {
 						if (!appliedKotlin[0]) {
 							appliedKotlin[0] = true;
-							val map = new HashMap<String, String>();
+							var map = new HashMap<String, String>();
 							map.put("indent_style", "tab");
 							map.put("indent_size", "unset");
 							spotless.kotlin(kotlin -> kotlin.ktlint().userData(map));
@@ -266,27 +271,27 @@ public class DefaultsPlugin implements Plugin<Project> {
 			if (settings.wrapperJavaArgs == null)
 				settings.wrapperJavaArgs = "-Xmx2G";
 
-			val map = new HashMap<String, String>();
+			var map = new HashMap<String, String>();
 			map.put("version", project.getVersion().toString());
 			map.put("mcversion", settings.minecraft);
 
-			val resources = project.getTasks().maybeCreate("processResources", ProcessResources.class);
+			var resources = project.getTasks().maybeCreate("processResources", ProcessResources.class);
 			resources.getInputs().properties(map);
 			resources.filesMatching("mcmod.info", it -> it.expand(map));
 
-			val apiKey = System.getenv("CURSEFORGE_API_KEY");
+			var apiKey = System.getenv("CURSEFORGE_API_KEY");
 			if (settings.curseforgeProject != null && apiKey != null) {
 				CurseExtensions.applyCursePlugin(settings, project, apiKey);
 			}
 		}
 
 		if (settings.wrapperJavaArgs != null) {
-			val wrapper = project.getTasks().maybeCreate("wrapper", Wrapper.class);
+			var wrapper = project.getTasks().maybeCreate("wrapper", Wrapper.class);
 			wrapper.getInputs().property("javaArgs", settings.wrapperJavaArgs);
 			wrapper.doLast(new Action<Task>() {
 				@Override
 				public void execute(Task ignored) {
-					val optsEnvVar = "DEFAULT_JVM_OPTS";
+					var optsEnvVar = "DEFAULT_JVM_OPTS";
 					replace(wrapper.getScriptFile(), optsEnvVar + "=\"\"", optsEnvVar + "=\"" + settings.wrapperJavaArgs + "\"");
 					replace(wrapper.getBatchScript(), "set " + optsEnvVar + "=", "set " + optsEnvVar + "=" + settings.wrapperJavaArgs);
 				}
@@ -303,7 +308,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 		return vcsUrl.substring(secondLast + 1, vcsUrl.lastIndexOf('.'));
 	}
 
-	@SneakyThrows
 	static String getVcsUrl(DefaultsPluginExtension settings) {
 		return "git@github.com:" + settings.organisation + '/' + settings.repository + ".git";
 	}
@@ -314,7 +318,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	}
 
 	private static FileTree files(Project project, String... globs) {
-		val args = new HashMap<String, Object>();
+		var args = new HashMap<String, Object>();
 		args.put("dir", project.getRootDir());
 		args.put("includes", Arrays.asList(globs));
 		args.put("excludes", Arrays.asList(GENERATED_PATHS));
@@ -331,7 +335,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		if (project.getTasks().findByName(name + "Jar") != null)
 			return;
 
-		val task = project.getTasks().create(name + "Jar", Jar.class);
+		var task = project.getTasks().create(name + "Jar", Jar.class);
 		task.getArchiveClassifier().set(name);
 		task.from(files);
 		project.getArtifacts().add("archives", task);

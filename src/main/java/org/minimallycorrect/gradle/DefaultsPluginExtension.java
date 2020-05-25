@@ -1,30 +1,16 @@
 package org.minimallycorrect.gradle;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.val;
+import java.util.*;
 
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 
-@Getter
-@Setter
-@ToString
 public class DefaultsPluginExtension {
 	public final List<String> annotationDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
 	public final List<String> annotationProcessorDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly", "annotationProcessor", "testAnnotationProcessor"));
 	public final List<String> annotationDependencyCoordinates = new ArrayList<>(Collections.singletonList(
 		"org.jetbrains:annotations:18.0.0"));
-	public final List<String> lombokDependencyCoordinates = new ArrayList<>(Collections.singletonList(
-		"org.projectlombok:lombok:1.18.10"));
+	public final List<String> lombokDependencyCoordinates = new ArrayList<>();
 	public final List<String> downstreamRepositories = new ArrayList<>();
 	public JavaVersion languageLevel = JavaVersion.VERSION_1_8;
 	public boolean javaWarnings = true;
@@ -68,7 +54,7 @@ public class DefaultsPluginExtension {
 	}
 
 	Map<String, Object> toProperties(Project project) {
-		val props = new HashMap<String, Object>();
+		var props = new HashMap<String, Object>();
 		props.put("organisation", organisation);
 		props.put("bintrayrepo", bintrayRepo);
 		props.put("name", project.getName());
