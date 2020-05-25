@@ -155,32 +155,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 				addArtifact(project, "deobf", sourceSets.getByName("main").getOutput());
 		}
 
-		if (settings.spotBugs) {
-			/* TODO: use once https://github.com/gradle/gradle/pull/2538 is done */
-			/*
-			project.getPlugins().apply("com.github.spotbugs");
-			//project.getDependencies().add("spotbugs", "com.github.spotbugs:spotbugs:3.1.0-RC5");
-			var extension = (SpotBugsExtension) project.getExtensions().getByName("spotbugs");
-			extension.setToolVersion("3.1.0-RC5");
-			var javaPluginConvention = project.getConvention().findPlugin(JavaPluginConvention.class);
-			extension.setSourceSets(Collections.singleton(javaPluginConvention.getSourceSets().getByName("main")));
-			extension.setIgnoreFailures(false);
-			extension.setReportsDir(project.file("build/findbugs"));
-			extension.setEffort("max");
-			extension.setReportLevel("low");
-			StringBuilder fbExclude = new StringBuilder();
-			fbExclude.append("<FindBugsFilter><Match>");
-			for (String findBugsExcludeBug : settings.spotBugsExclusions)
-				fbExclude.append("<Not><Bug pattern=\"").append(findBugsExcludeBug).append("\"/></Not>");
-			fbExclude.append("</Match></FindBugsFilter>");
-			extension.setIncludeFilterConfig(project.getResources().getText().fromString(fbExclude.toString()));
-			project.getTasks().withType(FindBugs.class, it -> {
-				it.getReports().forEach(report -> report.setEnabled(false));
-				it.getReports().getHtml().setEnabled(true);
-			});
-			*/
-		}
-
 		if (settings.spotless) {
 			project.getPlugins().apply(SpotlessPlugin.class);
 			var spotless = project.getExtensions().getByType(SpotlessExtension.class);
