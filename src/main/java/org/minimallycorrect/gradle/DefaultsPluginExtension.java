@@ -9,11 +9,13 @@ public class DefaultsPluginExtension {
 	public final List<String> annotationDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly"));
 	public final List<String> annotationProcessorDependencyTargets = new ArrayList<>(Arrays.asList("compileOnly", "testCompileOnly", "annotationProcessor", "testAnnotationProcessor"));
 	public final List<String> annotationDependencyCoordinates = new ArrayList<>(Collections.singletonList(
-		"org.jetbrains:annotations:18.0.0"));
-	public final List<String> lombokDependencyCoordinates = new ArrayList<>();
+		"org.jetbrains:annotations:19.0.0"));
+	public final List<String> lombokDependencyCoordinates = new ArrayList<>(
+		Collections.singletonList("org.projectlombok:lombok:1.18.12"));
 	public final List<String> downstreamRepositories = new ArrayList<>();
 	public JavaVersion languageLevel = JavaVersion.VERSION_1_8;
 	public boolean javaWarnings = true;
+	public boolean lombok = false;
 	public String minecraft = null;
 	public String minecraftMappings = null;
 	public String forge = null;
