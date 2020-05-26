@@ -236,7 +236,9 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 		for (String target : settings.annotationProcessorDependencyTargets) {
 			settings.annotationDependencyCoordinates.forEach((it) -> project.getDependencies().add(target, it));
-			settings.lombokDependencyCoordinates.forEach((it) -> project.getDependencies().add(target, it));
+			if (settings.lombok) {
+				settings.lombokDependencyCoordinates.forEach((it) -> project.getDependencies().add(target, it));
+			}
 		}
 
 		if (settings.minecraft != null) {

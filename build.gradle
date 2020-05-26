@@ -14,7 +14,7 @@ group="org.minimallycorrect.gradle"
 minimallyCorrectDefaults {
 	description = "Sets up sensible defaults for our gradle projects to avoid boilerplate"
 	labels = ["gradle", "gradle-plugin"]
-	languageLevel = null
+	languageLevel = JavaVersion.VERSION_11
 	lombokDependencyCoordinates.clear()
 	configureProject(project)
 }
