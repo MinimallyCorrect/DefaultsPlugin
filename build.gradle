@@ -41,7 +41,7 @@ dependencies {
 	compileOnly("gradle.plugin.com.matthewprenger:CurseGradle:1.4.0") {
 		transitive = false
 	}
-	implementation "com.diffplug.spotless:spotless-plugin-gradle:3.26.1"
+	implementation "com.diffplug.spotless:spotless-plugin-gradle:5.8.2"
 	implementation "org.shipkit:shipkit:2.2.7"
 	annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:0.3.0'
 }
