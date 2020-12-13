@@ -28,7 +28,6 @@ repositories {
 	maven { url = "https://repo.nallar.me/" }
 	maven { url = "https://plugins.gradle.org/m2/" }
 	maven { url = "https://files.minecraftforge.net/maven" }
-	maven { url = "https://jitpack.io" }
 }
 
 configurations.all { resolutionStrategy.cacheChangingModulesFor 30, 'seconds' }
@@ -44,7 +43,23 @@ dependencies {
 	}
 	implementation "com.diffplug.spotless:spotless-plugin-gradle:3.26.1"
 	implementation "org.shipkit:shipkit:2.2.7"
-	annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:0.2.0'
+	annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:0.3.0'
+}
+
+// per jabel docs
+tasks.withType(JavaCompile).all {
+	options.compilerArgs = [
+		"--release", "11", // Avoid using Java 9+ APIs
+		'--enable-preview',
+	]
+	// The following line can be omitted on Java 14 and higher
+	options.compilerArgs << '-Xplugin:jabel'
+
+	doFirst {
+		options.compilerArgs = options.compilerArgs.findAll {
+			it != '--enable-preview'
+		}
+	}
 }
 
 gradlePlugin {

@@ -1,0 +1,38 @@
+# This workflow will build a Java project with Gradle
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-gradle
+name: Java CI with Gradle
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+
+jobs:
+    verify-gradle-wrapper:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: gradle/wrapper-validation-action@v1.0.3
+
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                jdk: [11, 15]
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/cache@v2
+              with:
+                path: |
+                    ~/.gradle/caches
+                    ~/.gradle/wrapper
+                key: ${{ runner.os }}-jdk-${{ matrix.jdk }}-gradle-${{ hashFiles('**/*.gradle*') }}
+                restore-keys: |
+                    ${{ runner.os }}-jdk-${{ matrix.jdk }}-gradle-
+            - name: Set up JDK
+              uses: actions/setup-java@v1
+              with:
+                  java-version: ${{ matrix.jdk }}
+            - run: chmod +x gradlew
+            - run: ./gradlew build --stacktrace --warning-mode all
