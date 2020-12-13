@@ -34,7 +34,7 @@ configurations.all { resolutionStrategy.cacheChangingModulesFor 30, 'seconds' }
 
 dependencies {
 	api gradleApi()
-	compileOnly 'com.google.guava:guava:25.1-jre'
+	compileOnly 'com.google.guava:guava:30.0-jre'
 	compileOnly("net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT") {
 		transitive = false
 	}
