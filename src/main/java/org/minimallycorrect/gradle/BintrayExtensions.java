@@ -31,6 +31,8 @@ public class BintrayExtensions {
 				var githubRepo = DefaultsPlugin.getGithubRepo(settings);
 				pkg.setGithubRepo(githubRepo);
 				pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
+				pkg.getVersion().setName(project.getVersion().toString());
+				pkg.getVersion().setVcsTag("v" + project.getVersion());
 			});
 		});
 	}

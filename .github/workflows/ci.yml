@@ -16,6 +16,7 @@ jobs:
             - uses: gradle/wrapper-validation-action@v1.0.3
 
     build:
+        if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]')"
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -44,8 +45,7 @@ jobs:
         if: github.event_name == 'push'
             && github.ref == 'refs/heads/main'
             && github.repository == 'MinimallyCorrect/DefaultsPlugin'
-            && !contains(toJSON(github.event.commits.*.message), '[ci skip]')
-            && !contains(toJSON(github.event.commits.*.message), '[ci skip-release]')
+            && !contains(toJSON(github.event.commits.*.message), '[skip release]')
 
         steps:
             - name: Check out code
@@ -58,15 +58,9 @@ jobs:
               with:
                   java-version: 11
 
-            - name: Extract branch name
-              shell: bash
-              run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-              id: extract_branch
-
-            - name: Shipkit ciPerformRelease
-              run: ./gradlew ciPerformRelease
+            - name: Build and publish to Bintray/github
+              run: ./gradlew bintrayUpload githubRelease --scan
               env:
-                  TRAVIS_BRANCH: ${{ steps.extract_branch.outputs.branch }}
-                  GH_WRITE_TOKEN: ${{secrets.GITHUB_TOKEN}}
+                  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
                   BINTRAY_USER: ${{secrets.BINTRAY_API_USER}}
                   BINTRAY_KEY: ${{secrets.BINTRAY_API_KEY}}

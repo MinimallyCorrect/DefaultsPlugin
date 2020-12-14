@@ -4,8 +4,12 @@ buildscript {
 }
 plugins {
 	id "java-gradle-plugin"
-	id "maven"
+	id "maven-publish"
 	id "com.gradle.plugin-publish" version "0.12.0"
+	id "com.jfrog.bintray" version "1.8.5"
+	id "org.shipkit.shipkit-auto-version" version "0.0.73"
+	id "org.shipkit.shipkit-changelog" version "0.2.2"
+	id "org.shipkit.shipkit-gh-release" version "0.2.2"
 }
 apply plugin: 'org.minimallycorrect.gradle.DefaultsPlugin'
 
@@ -14,13 +18,12 @@ group="org.minimallycorrect.gradle"
 minimallyCorrectDefaults {
 	description = "Sets up sensible defaults for our gradle projects to avoid boilerplate"
 	labels = ["gradle", "gradle-plugin"]
+	shipkit = false
 	languageLevel = JavaVersion.VERSION_11
 	configureProject(project)
 }
 
-tasks.withType(JavaCompile) {
-	options.compilerArgs.addAll(['--release', '8'])
-}
+apply from: "$rootDir/gradle/shipkit.gradle"
 
 repositories {
 	jcenter()
@@ -38,11 +41,11 @@ dependencies {
 }
 
 // per jabel docs
-tasks.withType(JavaCompile).all {
-	options.compilerArgs = [
+tasks.withType(JavaCompile) {
+	options.compilerArgs.addAll([
 		"--release", "11", // Avoid using Java 9+ APIs
 		'--enable-preview',
-	]
+	])
 	// The following line can be omitted on Java 14 and higher
 	options.compilerArgs << '-Xplugin:jabel'
 
