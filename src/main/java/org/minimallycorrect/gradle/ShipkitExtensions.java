@@ -10,13 +10,8 @@ import java.util.regex.Pattern;
 import org.gradle.api.Project;
 import org.shipkit.gradle.configuration.ShipkitConfiguration;
 import org.shipkit.internal.gradle.java.ShipkitJavaPlugin;
-import org.shipkit.internal.gradle.versionupgrade.CiUpgradeDownstreamPlugin;
 import org.shipkit.internal.gradle.versionupgrade.UpgradeDependencyPlugin;
-import org.shipkit.internal.gradle.versionupgrade.UpgradeDownstreamExtension;
 import org.shipkit.internal.version.Version;
-
-import com.jfrog.bintray.gradle.BintrayExtension;
-import com.jfrog.bintray.gradle.BintrayPlugin;
 
 public class ShipkitExtensions {
 	static void initShipkit(DefaultsPluginExtension settings, Project project) {
@@ -53,36 +48,6 @@ public class ShipkitExtensions {
 
 			if (settings.minecraft != null)
 				project.setVersion(settings.minecraft + '-' + project.getVersion().toString());
-
-			project.allprojects(it -> {
-				it.getPlugins().apply(BintrayPlugin.class);
-				var bintray = it.getExtensions().getByType(BintrayExtension.class);
-				bintray.setUser("nallar");
-				bintray.setKey(System.getenv("BINTRAY_KEY"));
-				var pkg = bintray.getPkg();
-				pkg.setName(project.getName());
-				pkg.setRepo("minimallycorrectmaven");
-				pkg.setUserOrg("minimallycorrect");
-				pkg.setVcsUrl(DefaultsPlugin.getVcsUrl(settings));
-				pkg.setGithubReleaseNotesFile(DefaultsPlugin.RELEASE_NOTES_PATH);
-				pkg.setWebsiteUrl(DefaultsPlugin.getWebsiteUrl(settings));
-				if (settings.licenses == null)
-					throw new IllegalArgumentException("Must set settings.licenses when shipkit is enabled");
-				pkg.setLicenses(settings.licenses);
-				if (settings.labels == null)
-					throw new IllegalArgumentException("Must set labels when shipkit is enabled");
-				pkg.setLabels(settings.labels);
-				if (settings.description == null)
-					throw new IllegalArgumentException("Must set description when shipkit is enabled");
-				pkg.setDesc(settings.description);
-				pkg.setGithubRepo(githubRepo);
-				pkg.setIssueTrackerUrl("https://github.com/" + githubRepo + "/issues");
-			});
-
-			if (settings.downstreamRepositories.size() != 0) {
-				project.getPlugins().apply(CiUpgradeDownstreamPlugin.class);
-				project.getExtensions().getByType(UpgradeDownstreamExtension.class).setRepositories(settings.downstreamRepositories);
-			}
 
 			if (DefaultsPlugin.isTaskRequested(project, UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE)) {
 				project.getPlugins().apply(UpgradeDependencyPlugin.class);

@@ -137,6 +137,10 @@ public class DefaultsPlugin implements Plugin<Project> {
 		var javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
 		var sourceSets = javaPluginConvention.getSourceSets();
 
+		if (settings.bintray) {
+			BintrayExtensions.applyBintray(settings, project);
+		}
+
 		ShipkitExtensions.initShipkit(settings, project);
 
 		if (settings.noDocLint) {
@@ -227,17 +231,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 			for (JacocoReport reportTask : project.getTasks().withType(JacocoReport.class)) {
 				reportTask.getReports().forEach(it -> it.setEnabled(true));
 				project.getTasks().getByName("check").dependsOn(reportTask);
-			}
-		}
-
-		for (String target : settings.annotationDependencyTargets) {
-			settings.annotationDependencyCoordinates.forEach((it) -> project.getDependencies().add(target, it));
-		}
-
-		for (String target : settings.annotationProcessorDependencyTargets) {
-			settings.annotationDependencyCoordinates.forEach((it) -> project.getDependencies().add(target, it));
-			if (settings.lombok) {
-				settings.lombokDependencyCoordinates.forEach((it) -> project.getDependencies().add(target, it));
 			}
 		}
 
