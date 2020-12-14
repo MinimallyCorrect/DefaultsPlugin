@@ -28,9 +28,9 @@ jobs:
                 path: |
                     ~/.gradle/caches
                     ~/.gradle/wrapper
-                key: ${{ runner.os }}-jdk-${{ matrix.jdk }}-gradle-${{ hashFiles('**/*.gradle*') }}
+                key: ${{ runner.os }}-jdk-${{ matrix.jdk }}-gradlewrapper-${{ hashFiles('**/gradle-wrapper.properties') }}-gradlescripts-${{ hashFiles('**/*.gradle*') }}
                 restore-keys: |
-                    ${{ runner.os }}-jdk-${{ matrix.jdk }}-gradle-
+                    ${{ runner.os }}-jdk-${{ matrix.jdk }}-gradlewrapper-${{ hashFiles('**/gradle-wrapper.properties') }}-gradlescripts-
             - name: Set up JDK
               uses: actions/setup-java@v1
               with:
