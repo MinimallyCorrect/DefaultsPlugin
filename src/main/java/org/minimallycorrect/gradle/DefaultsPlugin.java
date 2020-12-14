@@ -26,7 +26,6 @@ import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.testing.jacoco.tasks.JacocoReport;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.shipkit.gradle.notes.UpdateReleaseNotesTask;
 
 import com.diffplug.gradle.spotless.JavaExtension;
 import com.diffplug.gradle.spotless.SpotlessExtension;
@@ -116,8 +115,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 			BintrayExtensions.applyBintray(settings, project);
 		}
 
-		ShipkitExtensions.initShipkit(settings, project);
-
 		if (settings.noDocLint) {
 			project.getTasks().withType(Javadoc.class).all(it -> {
 				var options = it.getOptions();
@@ -156,7 +153,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 					it.indentWithTabs();
 					it.endWithNewline();
 				});
-				project.getTasks().withType(UpdateReleaseNotesTask.class).all(it -> it.dependsOn("spotlessFreshmarkApply"));
 			}
 			if (settings.ktLint) {
 				boolean[] appliedKotlin = new boolean[]{false};
@@ -250,19 +246,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 		project.getArtifacts().add("archives", task);
 	}
 
-	static boolean shouldApplyShipKit(DefaultsPluginExtension settings, Project project) {
-		return settings.shipkit &&
-			project.getRootProject() == project &&
-			(project.hasProperty("applyShipkit") ||
-				DefaultsPlugin.isTaskRequested(project, "testRelease") ||
-				DefaultsPlugin.isTaskRequested(project, "releaseNeeded") ||
-				DefaultsPlugin.isTaskRequested(project, "initShipkit") ||
-				DefaultsPlugin.isCi());
-	}
-
 	private static boolean isCi() {
-		return Objects.equals(System.getenv("TRAVIS"), "true") ||
-			Objects.equals(System.getenv("CI"), "true");
+		return Objects.equals(System.getenv("CI"), "true");
 	}
 
 	static boolean isTaskRequested(Project project, String taskName) {

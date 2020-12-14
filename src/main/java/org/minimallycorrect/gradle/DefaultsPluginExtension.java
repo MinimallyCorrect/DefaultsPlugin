@@ -6,12 +6,11 @@ import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 
 public class DefaultsPluginExtension {
-	public JavaVersion languageLevel = JavaVersion.VERSION_1_8;
+	public JavaVersion languageLevel = JavaVersion.VERSION_11;
 	public boolean javaWarnings = true;
 	public boolean spotless = true;
 	public boolean googleJavaFormat = false;
 	public boolean jacoco = true;
-	public boolean shipkit = true;
 	public boolean artifacts = true;
 	public boolean bintray = true;
 	public String websiteUrl = null;
