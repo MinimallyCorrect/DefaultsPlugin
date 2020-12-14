@@ -166,33 +166,14 @@ public class DefaultsPlugin implements Plugin<Project> {
 				spotless.java(JavaExtension::googleJavaFormat);
 			} else {
 				File formatFile = getSpotlessFormatFile(project);
+				if (!formatFile.exists()) {
+					createSpotlessFormatFile(formatFile);
+				}
 				spotless.java(it -> {
 					it.eclipse().configFile(formatFile);
 					it.removeUnusedImports();
 					it.importOrder("java", "javax", "lombok", "sun", "org", "com", "org.minimallycorrect", "");
 					it.endWithNewline();
-				});
-				project.getTasks().all(it -> {
-					if (it.getName().startsWith("spotlessJava"))
-						it.doFirst(new Action<Task>() {
-							@Override
-							public void execute(@NotNull Task ignored) {
-								var resource = DefaultsPlugin.class.getResource("/spotless/eclipse-config.xml");
-								try {
-									if (!formatFile.exists() || resource.openConnection().getContentLength() != formatFile.length())
-										try (var is = resource.openStream()) {
-											var parent = formatFile.getParentFile();
-											if (!parent.isDirectory() && !parent.mkdirs())
-												throw new IOError(new IOException("Failed to create " + parent));
-											Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-										}
-								} catch (IOException e) {
-									throw new IOError(e);
-								}
-								if (!formatFile.exists())
-									throw new IOError(new IOException("Failed to create " + formatFile));
-							}
-						});
 				});
 			}
 			if (settings.freshmark && project.getRootProject() == project) {
@@ -266,6 +247,24 @@ public class DefaultsPlugin implements Plugin<Project> {
 				}
 			});
 		}
+	}
+
+	private static void createSpotlessFormatFile(File formatFile) {
+		formatFile.getParentFile().mkdirs();
+		var resource = DefaultsPlugin.class.getResource("/spotless/eclipse-config.xml");
+		try {
+			if (!formatFile.exists() || resource.openConnection().getContentLength() != formatFile.length())
+				try (var is = resource.openStream()) {
+					var parent = formatFile.getParentFile();
+					if (!parent.isDirectory() && !parent.mkdirs())
+						throw new IOError(new IOException("Failed to create " + parent));
+					Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				}
+		} catch (IOException e) {
+			throw new IOError(e);
+		}
+		if (!formatFile.exists())
+			throw new IOError(new IOException("Failed to create " + formatFile));
 	}
 
 	static String getGithubRepo(DefaultsPluginExtension settings) {
