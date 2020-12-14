@@ -1,6 +1,6 @@
 buildscript {
 	repositories { jcenter() }
-	dependencies { classpath 'org.minimallycorrect.gradle:DefaultsPlugin:0.0.58' }
+	dependencies { classpath 'org.minimallycorrect.gradle:DefaultsPlugin:0.0.59' }
 }
 plugins {
 	id "java-gradle-plugin"
@@ -25,23 +25,15 @@ tasks.withType(JavaCompile) {
 repositories {
 	jcenter()
 	maven { url = "https://plugins.gradle.org/m2/" }
-	maven { url = "https://files.minecraftforge.net/maven" }
 }
 
 configurations.all { resolutionStrategy.cacheChangingModulesFor 30, 'seconds' }
 
 dependencies {
 	api gradleApi()
-	compileOnly 'com.google.guava:guava:30.0-jre'
-	compileOnly("net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT") {
-		transitive = false
-	}
-	compileOnly("gradle.plugin.com.matthewprenger:CurseGradle:1.4.0") {
-		transitive = false
-	}
 	compileOnly "org.jetbrains:annotations:20.1.0"
 	implementation "com.diffplug.spotless:spotless-plugin-gradle:5.8.2"
-	implementation "org.shipkit:shipkit:2.2.7"
+	implementation "org.shipkit:shipkit:2.3.5"
 	annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:0.3.0'
 }
 

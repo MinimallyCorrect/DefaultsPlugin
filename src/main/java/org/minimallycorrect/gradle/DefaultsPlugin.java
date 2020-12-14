@@ -27,7 +27,6 @@ import org.gradle.testing.jacoco.tasks.JacocoReport;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.shipkit.gradle.notes.UpdateReleaseNotesTask;
-import org.shipkit.internal.gradle.versionupgrade.UpgradeDependencyPlugin;
 
 import com.diffplug.gradle.spotless.JavaExtension;
 import com.diffplug.gradle.spotless.SpotlessExtension;
@@ -258,7 +257,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 				DefaultsPlugin.isTaskRequested(project, "testRelease") ||
 				DefaultsPlugin.isTaskRequested(project, "releaseNeeded") ||
 				DefaultsPlugin.isTaskRequested(project, "initShipkit") ||
-				DefaultsPlugin.isTaskRequested(project, UpgradeDependencyPlugin.PERFORM_VERSION_UPGRADE) ||
 				DefaultsPlugin.isCi());
 	}
 
