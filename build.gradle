@@ -1,6 +1,6 @@
 buildscript {
 	repositories { jcenter() }
-	dependencies { classpath 'org.minimallycorrect.gradle:DefaultsPlugin:0.0.56' }
+	dependencies { classpath 'org.minimallycorrect.gradle:DefaultsPlugin:0.0.58' }
 }
 plugins {
 	id "java-gradle-plugin"
@@ -15,7 +15,6 @@ minimallyCorrectDefaults {
 	description = "Sets up sensible defaults for our gradle projects to avoid boilerplate"
 	labels = ["gradle", "gradle-plugin"]
 	languageLevel = JavaVersion.VERSION_11
-	lombokDependencyCoordinates.clear()
 	configureProject(project)
 }
 
@@ -25,7 +24,6 @@ tasks.withType(JavaCompile) {
 
 repositories {
 	jcenter()
-	maven { url = "https://repo.nallar.me/" }
 	maven { url = "https://plugins.gradle.org/m2/" }
 	maven { url = "https://files.minecraftforge.net/maven" }
 }
@@ -41,6 +39,7 @@ dependencies {
 	compileOnly("gradle.plugin.com.matthewprenger:CurseGradle:1.4.0") {
 		transitive = false
 	}
+	compileOnly "org.jetbrains:annotations:20.1.0"
 	implementation "com.diffplug.spotless:spotless-plugin-gradle:5.8.2"
 	implementation "org.shipkit:shipkit:2.2.7"
 	annotationProcessor 'com.github.bsideup.jabel:jabel-javac-plugin:0.3.0'
