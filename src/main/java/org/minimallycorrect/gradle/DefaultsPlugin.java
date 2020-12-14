@@ -12,10 +12,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Objects;
 
-import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.Task;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.plugins.JavaPluginConvention;
@@ -23,9 +21,7 @@ import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.javadoc.Javadoc;
-import org.gradle.api.tasks.wrapper.Wrapper;
 import org.gradle.external.javadoc.CoreJavadocOptions;
-import org.gradle.language.jvm.tasks.ProcessResources;
 import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.testing.jacoco.tasks.JacocoReport;
 import org.jetbrains.annotations.NotNull;
@@ -37,11 +33,6 @@ import com.diffplug.gradle.spotless.JavaExtension;
 import com.diffplug.gradle.spotless.SpotlessExtension;
 import com.diffplug.gradle.spotless.SpotlessPlugin;
 
-import net.minecraftforge.gradle.user.UserBaseExtension;
-import net.minecraftforge.gradle.user.patcherUser.forge.ForgePlugin;
-
-// gradle warning: Using Java lambdas is not supported, use an (anonymous) inner class instead.
-@SuppressWarnings("Convert2Lambda")
 public class DefaultsPlugin implements Plugin<Project> {
 	static final Charset CHARSET = StandardCharsets.UTF_8;
 	protected static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
@@ -50,14 +41,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 	private static String packageIfExists(@Nullable String in) {
 		return in == null || in.isEmpty() ? "." + in : "";
-	}
-
-	private static void replace(File file, String from, String to) {
-		try {
-			Files.write(file.toPath(), new String(Files.readAllBytes(file.toPath()), CHARSET).replace(from, to).getBytes(CHARSET));
-		} catch (IOException e) {
-			throw new IOError(e);
-		}
 	}
 
 	@Override
@@ -88,18 +71,11 @@ public class DefaultsPlugin implements Plugin<Project> {
 
 			var attributes = jar.getManifest().getAttributes();
 
-			if (settings.fmlCorePlugin != null)
-				attributes.put("FMLCorePlugin", settings.fmlCorePlugin);
-			if (settings.fmlCorePluginContainsFmlMod)
-				attributes.put("FMLCorePluginContainsFMLMod", "true");
 			attributes.put("Created-By", System.getProperty("java.vm.version") + " (" + System.getProperty("java.vm.vendor") + ")");
 			attributes.put("Gradle-Version", project.getGradle().getGradleVersion());
 			attributes.put("Group", project.getGroup());
 			attributes.put("Name", project.getName());
 			attributes.put("Implementation-Title", project.getGroup() + "." + project.getName() + packageIfExists(jar.getArchiveClassifier().getOrNull()));
-
-			if (settings.minecraft != null)
-				attributes.put("Minecraft-Version", settings.minecraft);
 		});
 
 		project.getTasks().withType(JavaCompile.class).all(it -> {
@@ -155,8 +131,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 		if (settings.artifacts) {
 			addArtifact(project, "sources", sourceSets.getByName("main").getAllSource());
 			addArtifact(project, "javadoc", ((Javadoc) project.getTasks().getByName("javadoc")).getOutputs());
-			if (settings.minecraft != null)
-				addArtifact(project, "deobf", sourceSets.getByName("main").getOutput());
 		}
 
 		if (settings.spotless) {
@@ -214,42 +188,10 @@ public class DefaultsPlugin implements Plugin<Project> {
 				project.getTasks().getByName("check").dependsOn(reportTask);
 			}
 		}
-
-		if (settings.minecraft != null) {
-			project.getPlugins().apply(ForgePlugin.class);
-			ForgeExtensions.configureMinecraft(project, settings, project.getExtensions().getByType(UserBaseExtension.class));
-			if (settings.wrapperJavaArgs == null)
-				settings.wrapperJavaArgs = "-Xmx2G";
-
-			var map = new HashMap<String, String>();
-			map.put("version", project.getVersion().toString());
-			map.put("mcversion", settings.minecraft);
-
-			var resources = project.getTasks().maybeCreate("processResources", ProcessResources.class);
-			resources.getInputs().properties(map);
-			resources.filesMatching("mcmod.info", it -> it.expand(map));
-
-			var apiKey = System.getenv("CURSEFORGE_API_KEY");
-			if (settings.curseforgeProject != null && apiKey != null) {
-				CurseExtensions.applyCursePlugin(settings, project, apiKey);
-			}
-		}
-
-		if (settings.wrapperJavaArgs != null) {
-			var wrapper = project.getTasks().maybeCreate("wrapper", Wrapper.class);
-			wrapper.getInputs().property("javaArgs", settings.wrapperJavaArgs);
-			wrapper.doLast(new Action<Task>() {
-				@Override
-				public void execute(Task ignored) {
-					var optsEnvVar = "DEFAULT_JVM_OPTS";
-					replace(wrapper.getScriptFile(), optsEnvVar + "=\"\"", optsEnvVar + "=\"" + settings.wrapperJavaArgs + "\"");
-					replace(wrapper.getBatchScript(), "set " + optsEnvVar + "=", "set " + optsEnvVar + "=" + settings.wrapperJavaArgs);
-				}
-			});
-		}
 	}
 
 	private static void createSpotlessFormatFile(File formatFile) {
+		//noinspection ResultOfMethodCallIgnored
 		formatFile.getParentFile().mkdirs();
 		var resource = DefaultsPlugin.class.getResource("/spotless/eclipse-config.xml");
 		try {

@@ -8,22 +8,13 @@ import org.gradle.api.Project;
 public class DefaultsPluginExtension {
 	public JavaVersion languageLevel = JavaVersion.VERSION_1_8;
 	public boolean javaWarnings = true;
-	public boolean lombok = false;
-	public String minecraft = null;
-	public String minecraftMappings = null;
-	public String forge = null;
-	public String fmlCorePlugin = null;
-	public boolean fmlCorePluginContainsFmlMod = false;
 	public boolean spotless = true;
 	public boolean googleJavaFormat = false;
 	public boolean jacoco = true;
 	public boolean shipkit = true;
 	public boolean artifacts = true;
 	public boolean bintray = true;
-	public String wrapperJavaArgs = null;
-	public String vcsUrl = null;
 	public String websiteUrl = null;
-	public String curseforgeProject = null;
 	public String[] labels;
 	public String[] licenses = {"MIT"};
 	public String description;
@@ -57,20 +48,6 @@ public class DefaultsPluginExtension {
 		props.put("discordId", "313371711632441344");
 		props.put("discordInvite", "https://discord.gg/YrV3bDm");
 		return props;
-	}
-
-	String getForge(String minecraft) {
-		if (forge != null)
-			return forge;
-
-		return ForgeExtensions.getForge(minecraft);
-	}
-
-	String getMappings(String minecraft) {
-		if (minecraftMappings != null)
-			return minecraftMappings;
-
-		return ForgeExtensions.getMappings(minecraft);
 	}
 
 	@SuppressWarnings("unused")
