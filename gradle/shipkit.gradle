@@ -1,6 +1,6 @@
 tasks.named("generateChangelog") {
 	previousRevision = project.ext.'shipkit-auto-version.previous-tag'
-	readOnlyToken = System.getenv("GITHUB_TOKEN") || "bf61e48ac43dbad4d4a63ff664f5f9446adaa9c5"
+	githubToken = System.getenv("GITHUB_TOKEN")
 	repository = minimallyCorrectDefaults.organisation + "/" + minimallyCorrectDefaults.repository
 }
 
@@ -9,7 +9,7 @@ tasks.named("githubRelease") {
 	dependsOn genTask
 	repository = genTask.repository
 	changelog = genTask.outputFile
-	writeToken = System.getenv("GITHUB_TOKEN")
+	githubToken = System.getenv("GITHUB_TOKEN")
 }
 
 bintray.dryRun = !(project.hasProperty("bintrayNoDryRun") || System.getenv("CI"))
