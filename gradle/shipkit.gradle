@@ -9,6 +9,7 @@ tasks.named("githubRelease") {
 	dependsOn genTask
 	repository = genTask.repository
 	changelog = genTask.outputFile
+	newTagRevision = System.getenv("GITHUB_SHA")
 	githubToken = System.getenv("GITHUB_TOKEN")
 }
 
