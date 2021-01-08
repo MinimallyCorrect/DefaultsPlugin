@@ -9,7 +9,7 @@ plugins {
 	id "com.jfrog.bintray" version "1.8.5"
 	id "org.shipkit.shipkit-auto-version" version "1.1.0"
 	id "org.shipkit.shipkit-changelog" version "0.2.2"
-	id "org.shipkit.shipkit-gh-release" version "0.2.2"
+	id "org.shipkit.shipkit-gh-release" version "1.0.0"
 }
 apply plugin: 'org.minimallycorrect.gradle.DefaultsPlugin'
 
