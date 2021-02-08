@@ -1,7 +1,3 @@
-buildscript {
-	repositories { jcenter() }
-	dependencies { classpath("org.minimallycorrect.gradle:DefaultsPlugin:0.1.3") }
-}
 plugins {
 	id("java-gradle-plugin")
 	id("maven-publish")
