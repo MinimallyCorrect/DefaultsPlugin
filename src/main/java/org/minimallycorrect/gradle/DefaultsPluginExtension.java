@@ -12,13 +12,11 @@ public class DefaultsPluginExtension {
 	public boolean googleJavaFormat = false;
 	public boolean jacoco = true;
 	public boolean artifacts = true;
-	public boolean bintray = true;
 	public String websiteUrl = null;
 	public String[] labels;
 	public String[] licenses = {"MIT"};
 	public String description;
 	public String organisation = "MinimallyCorrect";
-	public String bintrayRepo = (organisation + "/minimallycorrectmaven").toLowerCase();
 	public String repository;
 	public boolean freshmark;
 	public boolean ktLint = true;
@@ -35,7 +33,6 @@ public class DefaultsPluginExtension {
 	Map<String, Object> toProperties(Project project) {
 		var props = new HashMap<String, Object>();
 		props.put("organisation", organisation);
-		props.put("bintrayrepo", bintrayRepo);
 		props.put("name", project.getName());
 		props.put("group", project.getGroup());
 		props.put("version", project.getVersion());
