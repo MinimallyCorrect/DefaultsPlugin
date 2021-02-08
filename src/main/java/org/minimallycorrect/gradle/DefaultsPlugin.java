@@ -111,10 +111,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 		var javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
 		var sourceSets = javaPluginConvention.getSourceSets();
 
-		if (settings.bintray) {
-			BintrayExtensions.applyBintray(settings, project);
-		}
-
 		if (settings.noDocLint) {
 			project.getTasks().withType(Javadoc.class).all(it -> {
 				var options = it.getOptions();
