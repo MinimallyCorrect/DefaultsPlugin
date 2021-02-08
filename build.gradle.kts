@@ -7,7 +7,7 @@ plugins {
 	id("maven-publish")
 	id("com.gradle.plugin-publish") version "0.12.0"
 	id("com.jfrog.bintray") version "1.8.5"
-	id("org.shipkit.shipkit-auto-version") version "1.1.0"
+	id("org.shipkit.shipkit-auto-version") version "1.1.1"
 	id("org.shipkit.shipkit-changelog") version "0.2.21"
 	id("org.shipkit.shipkit-github-release") version "1.1.1"
 }
