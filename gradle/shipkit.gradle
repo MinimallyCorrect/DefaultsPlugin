@@ -1,7 +1,7 @@
 tasks.named("generateChangelog") {
 	previousRevision = project.ext.'shipkit-auto-version.previous-tag'
 	githubToken = System.getenv("GITHUB_TOKEN")
-	repository = minimallyCorrectDefaults.organisation + "/" + minimallyCorrectDefaults.repository
+	repository = "MinimallyCorrect/DefaultsPlugin"
 }
 
 tasks.named("githubRelease") {
