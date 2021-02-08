@@ -58,9 +58,7 @@ jobs:
               with:
                   java-version: 11
 
-            - name: Build and publish to Bintray/github
-              run: ./gradlew bintrayUpload githubRelease -s
+            - name: Build and publish to github
+              run: ./gradlew githubRelease -s
               env:
                   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-                  BINTRAY_USER: ${{secrets.BINTRAY_API_USER}}
-                  BINTRAY_KEY: ${{secrets.BINTRAY_API_KEY}}
