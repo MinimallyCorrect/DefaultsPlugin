@@ -21,7 +21,7 @@ configurations.all { resolutionStrategy.cacheChangingModulesFor(30, "seconds") }
 dependencies {
 	api(gradleApi())
 	compileOnly("org.jetbrains:annotations:20.1.0")
-	implementation("com.diffplug.spotless:spotless-plugin-gradle:5.9.0")
+	implementation("com.diffplug.spotless:spotless-plugin-gradle:5.10.0")
 	annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.3.0")
 }
 
