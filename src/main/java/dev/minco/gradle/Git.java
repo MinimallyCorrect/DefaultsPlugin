@@ -1,4 +1,4 @@
-package org.minimallycorrect.gradle;
+package dev.minco.gradle;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOError;

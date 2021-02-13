@@ -1,4 +1,4 @@
-package org.minimallycorrect.gradle;
+package dev.minco.gradle;
 
 import java.io.File;
 import java.io.IOError;
@@ -64,7 +64,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 			ext.setTargetCompatibility(settings.languageLevel);
 		}
 
-		project.getTasks().withType(Jar.class).all(jar -> {
+		project.getTasks().withType(Jar.class).configureEach(jar -> {
 			jar.setDuplicatesStrategy(DuplicatesStrategy.WARN);
 
 			var attributes = jar.getManifest().getAttributes();
@@ -76,35 +76,15 @@ public class DefaultsPlugin implements Plugin<Project> {
 			attributes.put("Implementation-Title", project.getGroup() + "." + project.getName() + packageIfExists(jar.getArchiveClassifier().getOrNull()));
 		});
 
-		project.getTasks().withType(JavaCompile.class).all(it -> {
+		project.getTasks().withType(JavaCompile.class).configureEach(it -> {
 			var options = it.getOptions();
 			options.setEncoding("UTF-8");
 
 			if (settings.javaWarnings) {
 				options.setDeprecation(true);
 				options.getCompilerArgs().addAll(Arrays.asList("-Xlint:all", "-Xlint:-path", "-Xlint:-processing", "-Xlint:-serial"));
-				if (settings.ignoreSunInternalWarnings) {
-					options.getCompilerArgs().add("-XDignore.symbol.file");
-					options.setFork(true);
-					options.getForkOptions().setExecutable("javac");
-				}
 				if (settings.treatWarningsAsErrors)
 					options.getCompilerArgs().add("-Werror");
-			}
-		});
-
-		project.getRepositories().jcenter();
-		// TODO: deprecate this, we use jcenter now
-		project.getRepositories().maven(it -> {
-			it.setName("repo.nallar.me maven");
-			it.setUrl("https://repo.nallar.me/");
-			try {
-				it.content(c -> {
-					c.includeGroupByRegex("me\\.nallar.*");
-					c.includeGroupByRegex("org\\.minimallycorrect.*");
-				});
-			} catch (NoSuchMethodError ignored) {
-				// gradle < 5.1
 			}
 		});
 
@@ -200,19 +180,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 			throw new IOError(new IOException("Failed to create " + formatFile));
 	}
 
-	static String getGithubRepo(DefaultsPluginExtension settings) {
-		String vcsUrl = getVcsUrl(settings);
-		int lastIndexOfSlash = vcsUrl.lastIndexOf('/');
-		int secondLast = vcsUrl.lastIndexOf('/', lastIndexOfSlash - 1);
-		if (secondLast == -1)
-			secondLast = vcsUrl.lastIndexOf(':', lastIndexOfSlash - 1);
-		return vcsUrl.substring(secondLast + 1, vcsUrl.lastIndexOf('.'));
-	}
-
-	static String getVcsUrl(DefaultsPluginExtension settings) {
-		return "git@github.com:" + settings.organisation + '/' + settings.repository + ".git";
-	}
-
 	@NotNull
 	private static File getSpotlessFormatFile(Project project) {
 		return new File(project.getBuildDir(), "spotless/eclipse-config.xml");
@@ -224,12 +191,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 		args.put("includes", Arrays.asList(globs));
 		args.put("excludes", Arrays.asList(GENERATED_PATHS));
 		return project.fileTree(args);
-	}
-
-	static String getWebsiteUrl(DefaultsPluginExtension settings) {
-		if (settings.websiteUrl != null)
-			return settings.websiteUrl;
-		return (settings.websiteUrl = "https://github.com/" + getGithubRepo(settings));
 	}
 
 	private static void addArtifact(Project project, String name, Object... files) {
