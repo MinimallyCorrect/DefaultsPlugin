@@ -86,18 +86,5 @@ publishing {
 				}
 			}
 		}
-		System.getenv("GITHUB_TOKEN")?.let { githubToken ->
-			maven {
-				name = "github_packages"
-				url = uri("https://maven.pkg.github.com/${project.ext["githubOwnerProject"]}")
-				credentials(HttpHeaderCredentials::class.java) {
-					name = "Authorization"
-					value = "Bearer $githubToken"
-				}
-				authentication {
-					create<HttpHeaderAuthentication>("header")
-				}
-			}
-		}
 	}
 }
