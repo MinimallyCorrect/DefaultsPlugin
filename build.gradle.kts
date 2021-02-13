@@ -63,7 +63,7 @@ gradlePlugin {
 }
 
 pluginBundle {
-	website = "http://www.minimallycorrect.org/"
+	website = project.ext["website"] as String
 	vcsUrl = project.ext["vcsUrl"] as String
 	@Suppress("UNCHECKED_CAST")
 	tags = project.ext["tags"] as List<String>

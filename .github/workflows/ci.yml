@@ -59,7 +59,7 @@ jobs:
                   java-version: 11
 
             - name: Build and publish to github
-              run: ./gradlew -P releasing publish githubRelease -s
+              run: ./gradlew -P releasing publish publishPlugins githubRelease -s
               env:
                   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
                   GRADLE_PUBLISH_KEY: ${{secrets.GRADLE_PUBLISH_KEY}}
