@@ -1,21 +1,14 @@
 package dev.minco.gradle;
 
-import java.io.File;
-import java.io.IOError;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Objects;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.DuplicatesStrategy;
-import org.gradle.api.file.FileTree;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.bundling.Jar;
@@ -27,14 +20,8 @@ import org.gradle.testing.jacoco.tasks.JacocoReport;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.diffplug.gradle.spotless.JavaExtension;
-import com.diffplug.gradle.spotless.SpotlessExtension;
-import com.diffplug.gradle.spotless.SpotlessPlugin;
-
 public class DefaultsPlugin implements Plugin<Project> {
 	static final Charset CHARSET = StandardCharsets.UTF_8;
-	protected static final String RELEASE_NOTES_PATH = "docs/release-notes.md";
-	private static final String[] GENERATED_PATHS = {RELEASE_NOTES_PATH};
 	DefaultsPluginExtension settings;
 
 	private static String packageIfExists(@Nullable String in) {
@@ -106,50 +93,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		}
 
 		if (settings.spotless) {
-			project.getPlugins().apply(SpotlessPlugin.class);
-			var spotless = project.getExtensions().getByType(SpotlessExtension.class);
-			if (settings.googleJavaFormat) {
-				spotless.java(JavaExtension::googleJavaFormat);
-			} else {
-				File formatFile = getSpotlessFormatFile(project);
-				if (!formatFile.exists()) {
-					createSpotlessFormatFile(formatFile);
-				}
-				spotless.java(it -> {
-					it.eclipse().configFile(formatFile);
-					it.removeUnusedImports();
-					it.importOrder("java", "javax", "lombok", "sun", "org", "com", "org.minimallycorrect", "");
-					it.endWithNewline();
-				});
-			}
-			if (settings.freshmark && project.getRootProject() == project) {
-				spotless.freshmark(it -> {
-					it.properties(props -> props.putAll(settings.toProperties(project)));
-					it.target(files(project, "**/*.md"));
-					it.indentWithTabs();
-					it.endWithNewline();
-				});
-			}
-			if (settings.ktLint) {
-				boolean[] appliedKotlin = new boolean[]{false};
-				project.getPlugins().all(it -> {
-					if (it.getClass().getCanonicalName().startsWith("org.jetbrains.kotlin")) {
-						if (!appliedKotlin[0]) {
-							appliedKotlin[0] = true;
-							var map = new HashMap<String, String>();
-							map.put("indent_style", "tab");
-							map.put("indent_size", "unset");
-							spotless.kotlin(kotlin -> kotlin.ktlint().userData(map));
-						}
-					}
-				});
-			}
-			spotless.format("misc", it -> {
-				it.target(files(project, "/.gitignore", "/.gitattributes", "**/*.sh"));
-				it.indentWithTabs();
-				it.trimTrailingWhitespace();
-				it.endWithNewline();
-			});
+			Spotless.applySpotlessSettings(settings, project);
 		}
 
 		if (settings.jacoco && (isCi() || isTaskRequested(project, "jacocoTestReport"))) {
@@ -159,38 +103,6 @@ public class DefaultsPlugin implements Plugin<Project> {
 				project.getTasks().getByName("check").dependsOn(reportTask);
 			}
 		}
-	}
-
-	private static void createSpotlessFormatFile(File formatFile) {
-		//noinspection ResultOfMethodCallIgnored
-		formatFile.getParentFile().mkdirs();
-		var resource = DefaultsPlugin.class.getResource("/spotless/eclipse-config.xml");
-		try {
-			if (!formatFile.exists() || resource.openConnection().getContentLength() != formatFile.length())
-				try (var is = resource.openStream()) {
-					var parent = formatFile.getParentFile();
-					if (!parent.isDirectory() && !parent.mkdirs())
-						throw new IOError(new IOException("Failed to create " + parent));
-					Files.copy(is, formatFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-				}
-		} catch (IOException e) {
-			throw new IOError(e);
-		}
-		if (!formatFile.exists())
-			throw new IOError(new IOException("Failed to create " + formatFile));
-	}
-
-	@NotNull
-	private static File getSpotlessFormatFile(Project project) {
-		return new File(project.getBuildDir(), "spotless/eclipse-config.xml");
-	}
-
-	private static FileTree files(Project project, String... globs) {
-		var args = new HashMap<String, Object>();
-		args.put("dir", project.getRootDir());
-		args.put("includes", Arrays.asList(globs));
-		args.put("excludes", Arrays.asList(GENERATED_PATHS));
-		return project.fileTree(args);
 	}
 
 	private static void addArtifact(Project project, String name, Object... files) {

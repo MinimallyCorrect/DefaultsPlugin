@@ -26,9 +26,19 @@ dependencies {
 	compileOnly("org.jetbrains:annotations:20.1.0")
 	implementation("com.diffplug.spotless:spotless-plugin-gradle:5.10.1")
 	annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.3.0")
+	testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.3.0")
+
+	testImplementation(platform("org.junit:junit-bom:5.7.1"))
+	testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+tasks.test {
+	useJUnitPlatform()
 }
 
 java {
+	targetCompatibility = JavaVersion.VERSION_11
+	sourceCompatibility = JavaVersion.VERSION_11
 	withSourcesJar()
 	withJavadocJar()
 }
@@ -39,6 +49,9 @@ tasks.withType<Javadoc>().configureEach {
 
 // per jabel docs
 tasks.withType<JavaCompile>().configureEach {
+	targetCompatibility = JavaVersion.VERSION_11.toString()
+	sourceCompatibility = JavaVersion.VERSION_11.toString()
+
 	options.compilerArgs.addAll(listOf(
 		"--release", "11", // Avoid using Java 9+ APIs
 		"--enable-preview"
