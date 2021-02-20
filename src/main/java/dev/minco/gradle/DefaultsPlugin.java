@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 
+import dev.minco.gradle.changelog.ChangelogTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.DuplicatesStrategy;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class DefaultsPlugin implements Plugin<Project> {
+	public static final String CHANGELOG_TASK_NAME = "mincoGenerateChangelog";
 	static final Charset CHARSET = StandardCharsets.UTF_8;
 	DefaultsPluginExtension settings;
 
@@ -31,6 +33,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 	@Override
 	public void apply(@NotNull Project project) {
 		project.getExtensions().add("minimallyCorrectDefaults", settings = new DefaultsPluginExtension(project));
+		project.getTasks().register(CHANGELOG_TASK_NAME, ChangelogTask.class);
 		project.afterEvaluate(it -> {
 			if (it.getState().getFailure() != null)
 				return;
