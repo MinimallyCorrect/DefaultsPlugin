@@ -2,7 +2,7 @@ plugins {
 	id("java-gradle-plugin")
 	id("maven-publish")
 	id("com.gradle.plugin-publish") version "0.12.0"
-	id("org.shipkit.shipkit-auto-version") version "1.1.1"
+	id("org.shipkit.shipkit-auto-version") version "1.1.16"
 	id("org.shipkit.shipkit-changelog") version "1.1.4"
 	id("org.shipkit.shipkit-github-release") version "1.1.4"
 }
