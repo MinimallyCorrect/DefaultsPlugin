@@ -23,7 +23,7 @@ repositories {
 
 dependencies {
 	api(gradleApi())
-	compileOnly("org.jetbrains:annotations:20.1.0")
+	compileOnly("org.jetbrains:annotations:21.0.1")
 	implementation("com.diffplug.spotless:spotless-plugin-gradle:5.14.2")
 	annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.1")
 	testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.1")
