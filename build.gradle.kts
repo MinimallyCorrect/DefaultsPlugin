@@ -24,9 +24,9 @@ repositories {
 dependencies {
 	api(gradleApi())
 	compileOnly("org.jetbrains:annotations:20.1.0")
-	implementation("com.diffplug.spotless:spotless-plugin-gradle:5.10.2")
-	annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.3.0")
-	testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.3.0")
+	implementation("com.diffplug.spotless:spotless-plugin-gradle:5.14.2")
+	annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.1")
+	testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.1")
 
 	testImplementation(platform("org.junit:junit-bom:5.7.1"))
 	testImplementation("org.junit.jupiter:junit-jupiter")
