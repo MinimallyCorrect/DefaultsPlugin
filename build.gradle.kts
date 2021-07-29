@@ -1,10 +1,10 @@
 plugins {
 	id("java-gradle-plugin")
 	id("maven-publish")
-	id("com.gradle.plugin-publish") version "0.12.0"
-	id("org.shipkit.shipkit-auto-version") version "1.1.1"
-	id("org.shipkit.shipkit-changelog") version "1.1.4"
-	id("org.shipkit.shipkit-github-release") version "1.1.4"
+	id("com.gradle.plugin-publish") version "0.15.0"
+	id("org.shipkit.shipkit-auto-version") version "1.1.19"
+	id("org.shipkit.shipkit-changelog") version "1.1.15"
+	id("org.shipkit.shipkit-github-release") version "1.1.15"
 }
 
 apply(from = "$rootDir/properties.gradle")
@@ -28,7 +28,7 @@ dependencies {
 	annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.1")
 	testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.1")
 
-	testImplementation(platform("org.junit:junit-bom:5.7.1"))
+	testImplementation(platform("org.junit:junit-bom:5.7.2"))
 	testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
