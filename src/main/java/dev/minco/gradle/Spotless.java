@@ -36,7 +36,7 @@ public class Spotless {
 		if (settings.freshmark && project.getRootProject() == project) {
 			spotless.freshmark(it -> {
 				it.properties(props -> props.putAll(settings.toProperties(project)));
-				it.target(files(project, "**/*.md"));
+				it.target("**/*.md");
 				it.indentWithTabs();
 				it.endWithNewline();
 			});
@@ -56,7 +56,7 @@ public class Spotless {
 			});
 		}
 		spotless.format("misc", it -> {
-			it.target(files(project, "/.gitignore", "/.gitattributes", "**/*.sh"));
+			it.target(".gitignore", ".gitattributes", "**/*.sh");
 			it.indentWithTabs();
 			it.trimTrailingWhitespace();
 			it.endWithNewline();
