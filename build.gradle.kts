@@ -86,6 +86,12 @@ pluginBundle {
 }
 
 publishing {
+	publications.withType<MavenPublication> {
+		pom.scm {
+			url.set(pluginBundle.vcsUrl)
+		}
+	}
+
 	repositories {
 		System.getenv("DEPLOYMENT_REPO_PASSWORD")?.let { deploymentRepoPassword ->
 			maven {
