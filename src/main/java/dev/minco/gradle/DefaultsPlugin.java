@@ -78,8 +78,8 @@ public class DefaultsPlugin implements Plugin<Project> {
 			}
 		});
 
-		var javaPluginConvention = project.getConvention().getPlugin(JavaPluginConvention.class);
-		var sourceSets = javaPluginConvention.getSourceSets();
+		var javaPluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
+		var sourceSets = javaPluginExtension.getSourceSets();
 
 		if (settings.noDocLint) {
 			project.getTasks().withType(Javadoc.class).all(it -> {
@@ -102,7 +102,7 @@ public class DefaultsPlugin implements Plugin<Project> {
 		if (settings.jacoco && (isCi() || isTaskRequested(project, "jacocoTestReport"))) {
 			project.getPlugins().apply(JacocoPlugin.class);
 			for (JacocoReport reportTask : project.getTasks().withType(JacocoReport.class)) {
-				reportTask.getReports().forEach(it -> it.setEnabled(true));
+				reportTask.getReports().forEach(it -> it.getRequired().convention(true));
 				project.getTasks().getByName("check").dependsOn(reportTask);
 			}
 		}

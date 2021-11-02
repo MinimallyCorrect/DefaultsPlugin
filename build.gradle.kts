@@ -52,6 +52,11 @@ tasks.withType<JavaCompile>().configureEach {
 	targetCompatibility = JavaVersion.VERSION_11.toString()
 	sourceCompatibility = JavaVersion.VERSION_11.toString()
 
+	options.setDeprecation(true)
+	options.compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-path", "-Xlint:-processing", "-Xlint:-serial"))
+	// The following line can be omitted on Java 14 and higher
+	options.compilerArgs.add("-Xplugin:jabel")
+
 	options.compilerArgs.addAll(listOf(
 		"--release", "11", // Avoid using Java 9+ APIs
 		"--enable-preview"
