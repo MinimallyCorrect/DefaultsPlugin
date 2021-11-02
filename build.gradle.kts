@@ -26,7 +26,7 @@ dependencies {
 	compileOnly("org.jetbrains:annotations:22.0.0")
 	implementation("com.diffplug.spotless:spotless-plugin-gradle:5.17.1")
 	annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.2")
-	testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.1")
+	testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.2")
 
 	testImplementation(platform("org.junit:junit-bom:5.8.1"))
 	testImplementation("org.junit.jupiter:junit-jupiter")
