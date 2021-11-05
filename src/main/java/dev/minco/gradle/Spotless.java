@@ -1,12 +1,5 @@
 package dev.minco.gradle;
 
-import com.diffplug.gradle.spotless.JavaExtension;
-import com.diffplug.gradle.spotless.SpotlessExtension;
-import com.diffplug.gradle.spotless.SpotlessPlugin;
-import org.gradle.api.Project;
-import org.gradle.api.file.FileTree;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
@@ -15,6 +8,14 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+
+import org.gradle.api.Project;
+import org.gradle.api.file.FileTree;
+import org.jetbrains.annotations.NotNull;
+
+import com.diffplug.gradle.spotless.JavaExtension;
+import com.diffplug.gradle.spotless.SpotlessExtension;
+import com.diffplug.gradle.spotless.SpotlessPlugin;
 
 public class Spotless {
 	static void applySpotlessSettings(DefaultsPluginExtension settings, Project project) {

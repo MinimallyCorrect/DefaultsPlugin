@@ -6,11 +6,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Objects;
 
-import dev.minco.gradle.changelog.ChangelogTask;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.file.DuplicatesStrategy;
-import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -20,6 +18,8 @@ import org.gradle.testing.jacoco.plugins.JacocoPlugin;
 import org.gradle.testing.jacoco.tasks.JacocoReport;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import dev.minco.gradle.changelog.ChangelogTask;
 
 public class DefaultsPlugin implements Plugin<Project> {
 	public static final String CHANGELOG_TASK_NAME = "mincoGenerateChangelog";

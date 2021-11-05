@@ -3,7 +3,6 @@ package dev.minco.gradle.changelog;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -37,10 +36,9 @@ public class ChangelogBuilder {
 		throw new RuntimeException("Error running git log. Exit code " + proc.exitValue() + ", output: " + output + ", command ran: " + args);
 	}
 
-
 	public static String formatChangelog(String commits,
-										 String version, String previousRev, String currentRev,
-										 String githubRepoUrl, String date) {
+		String version, String previousRev, String currentRev,
+		String githubRepoUrl, String date) {
 		return "#### " + date + " - " + version + "\n\n" +
 			"[Compare commits](" + githubRepoUrl + "/compare/" + previousRev + "..." + currentRev + ")\n\n" +
 			"" + commits;

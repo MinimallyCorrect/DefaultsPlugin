@@ -1,21 +1,20 @@
 package dev.minco.gradle.changelog;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import javax.inject.Inject;
+
 import org.gradle.api.DefaultTask;
-import org.gradle.api.Task;
 import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.file.ProjectLayout;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Property;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.*;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.text.SimpleDateFormat;
-import java.io.File;
-import java.util.Date;
 
 @CacheableTask
 public abstract class ChangelogTask extends DefaultTask {
