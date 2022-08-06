@@ -2,7 +2,7 @@ plugins {
 	id("java-gradle-plugin")
 	id("maven-publish")
 	id("com.gradle.plugin-publish") version "1.0.0"
-	id("org.shipkit.shipkit-auto-version") version "1.2.0"
+	id("org.shipkit.shipkit-auto-version") version "1.2.1"
 	id("org.shipkit.shipkit-changelog") version "1.2.0"
 	id("org.shipkit.shipkit-github-release") version "1.2.0"
 }
@@ -24,11 +24,11 @@ repositories {
 dependencies {
 	api(gradleApi())
 	compileOnly("org.jetbrains:annotations:23.0.0")
-	implementation("com.diffplug.spotless:spotless-plugin-gradle:6.7.0")
+	implementation("com.diffplug.spotless:spotless-plugin-gradle:6.9.0")
 	annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.2")
 	testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:0.4.2")
 
-	testImplementation(platform("org.junit:junit-bom:5.8.2"))
+	testImplementation(platform("org.junit:junit-bom:5.9.0"))
 	testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
