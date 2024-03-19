@@ -23,7 +23,7 @@ jobs:
                 jdk: [11, 15]
         steps:
             - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
-            - uses: actions/cache@f4278025ab0f432ce369118909e46deec636f50c # tag=v3.0.6
+            - uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
               with:
                 path: |
                     ~/.gradle/caches
