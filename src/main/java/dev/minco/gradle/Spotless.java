@@ -48,10 +48,16 @@ public class Spotless {
 				if (it.getClass().getCanonicalName().startsWith("org.jetbrains.kotlin")) {
 					if (!appliedKotlin[0]) {
 						appliedKotlin[0] = true;
-						var map = new HashMap<String, String>();
+						var map = new HashMap<String, Object>();
 						map.put("indent_style", "tab");
 						map.put("indent_size", "unset");
-						spotless.kotlin(kotlin -> kotlin.ktlint().userData(map));
+						spotless.kotlin(kotlin -> {
+							try {
+								kotlin.ktlint().editorConfigOverride(map);
+							} catch (IOException e) {
+								throw new IOError(e);
+							}
+						});
 					}
 				}
 			});
