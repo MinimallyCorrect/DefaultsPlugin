@@ -68,27 +68,26 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 gradlePlugin {
+	// https://github.com/gradle/gradle/issues/24458#issuecomment-1713231089
+	// pluginBundle.{website,vcsUrl,tags} moved to gradlePlugin in gradle 8.0 without proper announcement
+	website = project.ext["website"] as String
+	vcsUrl = project.ext["vcsUrl"] as String
 	plugins {
 		create(rootProject.name) {
 			id = "$group.${rootProject.name}"
 			displayName = rootProject.name
 			implementationClass = "dev.minco.gradle.DefaultsPlugin"
 			description = "Sets up sensible defaults for our gradle projects to avoid boilerplate "
+			@Suppress("UNCHECKED_CAST")
+			tags = project.ext["tags"] as List<String>
 		}
 	}
-}
-
-pluginBundle {
-	website = project.ext["website"] as String
-	vcsUrl = project.ext["vcsUrl"] as String
-	@Suppress("UNCHECKED_CAST")
-	tags = project.ext["tags"] as List<String>
 }
 
 publishing {
 	publications.withType<MavenPublication> {
 		pom.scm {
-			url.set(pluginBundle.vcsUrl)
+			url.set(gradlePlugin.vcsUrl)
 		}
 	}
 
