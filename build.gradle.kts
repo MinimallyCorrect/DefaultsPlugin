@@ -25,8 +25,11 @@ dependencies {
 	api(gradleApi())
 	compileOnly("org.jetbrains:annotations:24.0.1")
 	implementation("com.diffplug.spotless:spotless-plugin-gradle:6.9.0")
-	annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:1.0.0")
-	testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:1.0.0")
+	// FIXME: Revert to upstream if https://github.com/bsideup/jabel/issues/182#issuecomment-1898900307 is ever closed
+	annotationProcessor("com.pkware.jabel:jabel-javac-plugin:1.0.1-1")
+	testAnnotationProcessor("com.pkware.jabel:jabel-javac-plugin:1.0.1-1")
+	//annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:1.0.0")
+	//testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:1.0.0")
 
 	testImplementation(platform("org.junit:junit-bom:5.9.0"))
 	testImplementation("org.junit.jupiter:junit-jupiter")
