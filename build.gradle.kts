@@ -4,7 +4,7 @@ plugins {
 	id("com.gradle.plugin-publish") version "1.0.0"
 	id("org.shipkit.shipkit-auto-version") version "2.0.10"
 	id("org.shipkit.shipkit-changelog") version "2.0.1"
-	id("org.shipkit.shipkit-github-release") version "1.2.0"
+	id("org.shipkit.shipkit-github-release") version "2.0.1"
 }
 
 apply(from = "$rootDir/properties.gradle")
