@@ -23,7 +23,7 @@ repositories {
 
 dependencies {
 	api(gradleApi())
-	compileOnly("org.jetbrains:annotations:24.1.0")
+	compileOnly("org.jetbrains:annotations:26.0.2")
 	implementation("com.diffplug.spotless:spotless-plugin-gradle:7.0.1")
 	// FIXME: Revert to upstream if https://github.com/bsideup/jabel/issues/182#issuecomment-1898900307 is ever closed
 	annotationProcessor("com.pkware.jabel:jabel-javac-plugin:1.0.1-1")
