@@ -31,7 +31,7 @@ dependencies {
 	//annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:1.0.0")
 	//testAnnotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:1.0.0")
 
-	testImplementation(platform("org.junit:junit-bom:5.11.0"))
+	testImplementation(platform("org.junit:junit-bom:6.1.3"))
 	testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
